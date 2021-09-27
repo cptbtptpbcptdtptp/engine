@@ -66,7 +66,7 @@ export class Sprite extends RefObject {
   }
 
   set atlasRotated(value: boolean) {
-    if (this._atlasRotated != value) {
+    if (this._atlasRotated !== value) {
       this._atlasRotated = value;
       this._setDirtyFlagTrue(DirtyFlag.positions | DirtyFlag.uv);
     }
@@ -108,8 +108,15 @@ export class Sprite extends RefObject {
   }
 
   set pivot(value: Vector2) {
-    this._pivot.setValue(MathUtil.clamp(value.x, 0, 1), MathUtil.clamp(value.y, 0, 1));
-    this._setDirtyFlagTrue(DirtyFlag.positions);
+    const { _pivot: pivot } = this;
+    if (pivot !== value) {
+      if (pivot.x !== value.x || pivot.y !== value.y) {
+        pivot.setValue(MathUtil.clamp(value.x, 0, 1), MathUtil.clamp(value.y, 0, 1));
+        this._setDirtyFlagTrue(DirtyFlag.positions);
+      }
+    } else {
+      this._setDirtyFlagTrue(DirtyFlag.positions);
+    }
   }
 
   /**
@@ -120,11 +127,22 @@ export class Sprite extends RefObject {
   }
 
   set region(value: Rect) {
-    const region = this._region;
-    const x = MathUtil.clamp(value.x, 0, 1);
-    const y = MathUtil.clamp(value.y, 0, 1);
-    region.setValue(x, y, MathUtil.clamp(value.width, 0, 1 - x), MathUtil.clamp(value.height, 0, 1 - y));
-    this._setDirtyFlagTrue(DirtyFlag.positions | DirtyFlag.uv);
+    const { _region: region } = this;
+    if (region !== value) {
+      if (
+        region.x !== value.x ||
+        region.y !== value.y ||
+        region.width !== value.width ||
+        region.height !== value.height
+      ) {
+        const x = MathUtil.clamp(value.x, 0, 1);
+        const y = MathUtil.clamp(value.y, 0, 1);
+        region.setValue(x, y, MathUtil.clamp(value.width, 0, 1 - x), MathUtil.clamp(value.height, 0, 1 - y));
+        this._setDirtyFlagTrue(DirtyFlag.positions | DirtyFlag.uv);
+      }
+    } else {
+      this._setDirtyFlagTrue(DirtyFlag.positions | DirtyFlag.uv);
+    }
   }
 
   /**
@@ -201,10 +219,10 @@ export class Sprite extends RefObject {
       }
       // Determine whether it has been trimmed.
       if (
-        atlasRegionOffset.x == 0 &&
-        atlasRegionOffset.y == 0 &&
-        atlasRegionOffset.z == 0 &&
-        atlasRegionOffset.w == 0
+        atlasRegionOffset.x === 0 &&
+        atlasRegionOffset.y === 0 &&
+        atlasRegionOffset.z === 0 &&
+        atlasRegionOffset.w === 0
       ) {
         // Real rendering size.
         const realRenderW = textureW * regionW;
@@ -258,10 +276,10 @@ export class Sprite extends RefObject {
       let left: number, top: number, right: number, bottom: number;
       // Determine whether it has been trimmed.
       if (
-        atlasRegionOffset.x == 0 &&
-        atlasRegionOffset.y == 0 &&
-        atlasRegionOffset.z == 0 &&
-        atlasRegionOffset.w == 0
+        atlasRegionOffset.x === 0 &&
+        atlasRegionOffset.y === 0 &&
+        atlasRegionOffset.z === 0 &&
+        atlasRegionOffset.w === 0
       ) {
         const { width: atlasRegionW, height: atlasRegionH } = _atlasRegion;
         if (_atlasRotated) {
@@ -335,7 +353,7 @@ export class Sprite extends RefObject {
   }
 
   private _isContainDirtyFlag(type: number): boolean {
-    return (this._dirtyFlag & type) != 0;
+    return (this._dirtyFlag & type) !== 0;
   }
 
   private _setDirtyFlagTrue(type: number): void {
