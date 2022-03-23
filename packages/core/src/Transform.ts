@@ -18,7 +18,6 @@ export class Transform extends Component {
   private static _tempMat32: Matrix3x3 = new Matrix3x3();
   private static _tempMat41: Matrix = new Matrix();
   private static _tempMat42: Matrix = new Matrix();
-  private static _tempMat43: Matrix = new Matrix();
 
   @deepClone
   private _position: Vector3 = new Vector3();
@@ -501,27 +500,71 @@ export class Transform extends Component {
     zAxis.scale(1 / axisLen);
     const xAxis = Transform._tempVec31;
     if (worldUp) {
-      Vector3.cross(worldUp, zAxis, xAxis);
+      if (worldUp.length() <= MathUtil.zeroTolerance) {
+        throw new Error("Transform.lookAt: worldUp is illegal");
+      } else {
+        Vector3.cross(worldUp, zAxis, xAxis);
+      }
     } else {
       xAxis.setValue(zAxis.z, 0, -zAxis.x);
     }
     axisLen = xAxis.length();
     if (axisLen <= MathUtil.zeroTolerance) {
-      // @todo:
-      // 1.worldup is（0,0,0）
-      // 2.worldUp is parallel to zAxis
-      return;
+      // WorldUp is parallel to zAxis.
+      const { elements } = this.worldMatrix;
+      const oriZAxis = Transform._tempVec32.setValue(elements[8], elements[9], elements[10]);
+      axisLen = oriZAxis.length();
+      if (axisLen <= MathUtil.zeroTolerance) {
+        // Entity is scaled too small.
+        return;
+      } else {
+        oriZAxis.scale(1 / axisLen);
+        const rotateAxis = new Vector3();
+        Vector3.cross(oriZAxis, zAxis, rotateAxis);
+        axisLen = rotateAxis.length();
+        if (axisLen <= MathUtil.zeroTolerance) {
+          // The moving distance is too small, use the existing Y axis as the up vector to calculate.
+          Vector3.cross(Transform._tempVec32.setValue(elements[4], elements[5], elements[6]), zAxis, xAxis);
+          calByZAndX(zAxis, xAxis.normalize()).getRotation(this._worldRotationQuaternion);
+        } else {
+          // The movement distance is large, first rotate to a near-parallel position, and then rotate the remaining angle.
+          let totalRo = Math.asin(axisLen);
+          if (Vector3.dot(oriZAxis, zAxis) < 0) {
+            totalRo = totalRo > 0 ? Math.PI - totalRo : -Math.PI - totalRo;
+          }
+          const approachQuat = Transform._tempQuat0;
+          Quaternion.rotationAxisAngle(rotateAxis, totalRo - MathUtil.zeroTolerance, approachQuat);
+          Vector3.transformByQuat(oriZAxis, approachQuat, zAxis);
+          if (worldUp) {
+            Vector3.cross(worldUp, zAxis, xAxis);
+          } else {
+            xAxis.setValue(zAxis.z, 0, -zAxis.x);
+          }
+          this.worldRotationQuaternion = calByZAndX(zAxis, xAxis.normalize())
+            .getRotation(approachQuat)
+            .rotateAxisAngle(rotateAxis, MathUtil.zeroTolerance);
+        }
+      }
+    } else {
+      calByZAndX(zAxis, xAxis.scale(1 / axisLen)).getRotation(this._worldRotationQuaternion);
     }
-    xAxis.scale(1 / axisLen);
-    const yAxis = Transform._tempVec32;
-    Vector3.cross(zAxis, xAxis, yAxis);
 
-    const rotMat = Transform._tempMat41;
-    const { elements: e } = rotMat;
-    (e[0] = xAxis.x), (e[1] = xAxis.y), (e[2] = xAxis.z);
-    (e[4] = yAxis.x), (e[5] = yAxis.y), (e[6] = yAxis.z);
-    (e[8] = zAxis.x), (e[9] = zAxis.y), (e[10] = zAxis.z);
-    rotMat.getRotation(this._worldRotationQuaternion);
+    /**
+     * Calculate the world rotation based on the given Z and X axes.
+     * @param normalizedZAxis - Normalized Z-axis vector
+     * @param normalizedXAxis - Normalized X-axis vector
+     * @returns World rotation matrix
+     */
+    function calByZAndX(normalizedZAxis: Vector3, normalizedXAxis: Vector3): Matrix {
+      const normalizedYAxis = Transform._tempVec32;
+      Vector3.cross(normalizedZAxis, normalizedXAxis, normalizedYAxis);
+      const rotMat = Transform._tempMat41;
+      const { elements: e } = rotMat;
+      (e[0] = normalizedXAxis.x), (e[1] = normalizedXAxis.y), (e[2] = normalizedXAxis.z);
+      (e[4] = normalizedYAxis.x), (e[5] = normalizedYAxis.y), (e[6] = normalizedYAxis.z);
+      (e[8] = normalizedZAxis.x), (e[9] = normalizedZAxis.y), (e[10] = normalizedZAxis.z);
+      return rotMat;
+    }
   }
 
   /**
