@@ -29,6 +29,8 @@ export class Sprite extends RefObject {
   private _texture: Texture2D = null;
   private _atlasRotated: boolean = false;
   private _region: Rect = new Rect(0, 0, 1, 1);
+  /** X=left, Y=bottom, Z=right, W=top. */
+  private _border: Vector4 = new Vector4();
   private _pivot: Vector2 = new Vector2(0.5, 0.5);
   private _atlasRegion: Rect = new Rect(0, 0, 1, 1);
   private _atlasRegionOffset: Vector4 = new Vector4(0, 0, 0, 0);
@@ -73,6 +75,18 @@ export class Sprite extends RefObject {
       this._atlasRotated = value;
       this._setDirtyFlagTrue(DirtyFlag.positions | DirtyFlag.uv);
     }
+  }
+
+  /**
+   * Border of sprite.
+   * X=left, Y=bottom, Z=right, W=top.
+   */
+  get border(): Vector4 {
+    return this._border;
+  }
+
+  set border(value: Vector4) {
+    value.cloneTo(this._border);
   }
 
   /**
@@ -182,7 +196,7 @@ export class Sprite extends RefObject {
    * Clone.
    * @returns Cloned sprite
    */
-   clone(): Sprite {
+  clone(): Sprite {
     const cloneSprite = new Sprite(
       this._engine,
       this._texture,

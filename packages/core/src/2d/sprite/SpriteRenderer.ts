@@ -8,6 +8,7 @@ import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { Shader } from "../../shader/Shader";
 import { ShaderProperty } from "../../shader/ShaderProperty";
 import { UpdateFlag } from "../../UpdateFlag";
+import { SpriteDrawMode } from "../enums/SpriteDrawMode";
 import { SpriteMaskInteraction } from "../enums/SpriteMaskInteraction";
 import { SpriteMaskLayer } from "../enums/SpriteMaskLayer";
 import { Sprite } from "./Sprite";
@@ -50,6 +51,8 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
   private _maskInteraction: SpriteMaskInteraction = SpriteMaskInteraction.None;
   @assignmentClone
   private _maskLayer: number = SpriteMaskLayer.Layer0;
+  @assignmentClone
+  private _drawMode: SpriteDrawMode = SpriteDrawMode.Simple;
 
   /**
    * The Sprite to render.
@@ -106,6 +109,20 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
     if (this._flipY !== value) {
       this._flipY = value;
       this._setDirtyFlagTrue(DirtyFlag.Flip);
+    }
+  }
+
+  /**
+   * Sprite draw mode.
+   */
+  get drawMode(): SpriteDrawMode {
+    return this._drawMode;
+  }
+
+  set drawMode(value: SpriteDrawMode) {
+    if (this._drawMode !== value) {
+      this._drawMode = value;
+      this._setDirtyFlagTrue(DirtyFlag.DrawMode);
     }
   }
 
@@ -293,5 +310,6 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
 
 enum DirtyFlag {
   Flip = 0x1,
-  MaskInteraction = 0x2
+  MaskInteraction = 0x2,
+  DrawMode = 0x4
 }
