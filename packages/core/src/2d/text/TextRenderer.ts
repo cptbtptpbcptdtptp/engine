@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { BoundingBox, Color, Vector3 } from "@oasis-engine/math";
 import { Sprite, SpriteMaskInteraction, SpriteMaskLayer, SpriteRenderer } from "..";
 import { CompareFunction, Renderer, UpdateFlag } from "../..";
@@ -30,6 +31,21 @@ export class TextRenderer extends Renderer {
   private _positions: Vector3[] = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
   @deepClone
   private _color: Color = new Color(1, 1, 1, 1);
+=======
+import { BoundingBox } from "@oasis-engine/math";
+import { Camera } from "../../Camera";
+import { assignmentClone, ignoreClone } from "../../clone/CloneManager";
+import { Entity } from "../../Entity";
+import { Texture2D } from "../../texture";
+import { TextHorizontalAlignment, TextVerticalAlignment } from "../enums/TextAlignment";
+import { TextHorizontalOverflow, TextVerticalOverflow } from "../enums/TextOverflow";
+import { Sprite, SpriteRenderer } from "../sprite";
+import { TextUtils } from "./TextUtils";
+
+export class TextRenderer extends SpriteRenderer {
+  static needPremultiplyAlpha: boolean = false;
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   @assignmentClone
   private _text: string = "";
   @assignmentClone
@@ -37,6 +53,7 @@ export class TextRenderer extends Renderer {
   @assignmentClone
   private _height: number = 0;
   @assignmentClone
+<<<<<<< HEAD
   private _font: Font = null;
   @assignmentClone
   private _fontSize: number = 24;
@@ -44,11 +61,23 @@ export class TextRenderer extends Renderer {
   private _fontStyle: FontStyle = FontStyle.None;
   @assignmentClone
   private _lineSpacing: number = 0;
+=======
+  private _fontName: string = "Arial";
+  @assignmentClone
+  private _fontSize: number = 24;
+  @assignmentClone
+  private _lineHeight: number = 1;
+  @assignmentClone
+  private _isBold: boolean = false;
+  @assignmentClone
+  private _isItalic: boolean = false;
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   @assignmentClone
   private _horizontalAlignment: TextHorizontalAlignment = TextHorizontalAlignment.Center;
   @assignmentClone
   private _verticalAlignment: TextVerticalAlignment = TextVerticalAlignment.Center;
   @assignmentClone
+<<<<<<< HEAD
   private _enableWrapping: boolean = false;
   @assignmentClone
   private _overflowMode: OverflowMode = OverflowMode.Overflow;
@@ -76,6 +105,16 @@ export class TextRenderer extends Renderer {
 
   /**
    * Rendering string for the Text.
+=======
+  private _horizontalOverflow: TextHorizontalOverflow = TextHorizontalOverflow.Wrap;
+  @assignmentClone
+  private _verticalOverflow: TextVerticalOverflow = TextVerticalOverflow.Truncate;
+  @ignoreClone
+  private _styleDirtyFlag: boolean = true;
+
+  /**
+   *
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
    */
   get text(): string {
     return this._text;
@@ -85,6 +124,7 @@ export class TextRenderer extends Renderer {
     value = value || "";
     if (this._text !== value) {
       this._text = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -92,6 +132,12 @@ export class TextRenderer extends Renderer {
   /**
    * The width of the TextRenderer (in 3D world coordinates).
    */
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   get width(): number {
     return this._width;
   }
@@ -99,6 +145,7 @@ export class TextRenderer extends Renderer {
   set width(value: number) {
     if (this._width !== value) {
       this._width = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -106,6 +153,12 @@ export class TextRenderer extends Renderer {
   /**
    * The height of the TextRenderer (in 3D world coordinates).
    */
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   get height(): number {
     return this._height;
   }
@@ -113,6 +166,7 @@ export class TextRenderer extends Renderer {
   set height(value: number) {
     if (this._height !== value) {
       this._height = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -134,6 +188,24 @@ export class TextRenderer extends Renderer {
   /**
    * The font size of the Text.
    */
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get fontName(): string {
+    return this._fontName;
+  }
+
+  set fontName(value: string) {
+    value = value || "Arial";
+    if (this._fontName !== value) {
+      this._fontName = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   get fontSize(): number {
     return this._fontSize;
   }
@@ -141,6 +213,7 @@ export class TextRenderer extends Renderer {
   set fontSize(value: number) {
     if (this._fontSize !== value) {
       this._fontSize = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -176,6 +249,45 @@ export class TextRenderer extends Renderer {
   /**
    * The horizontal alignment.
    */
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get lineHeight(): number {
+    return this._lineHeight;
+  }
+
+  set lineHeight(value: number) {
+    if (this._lineHeight !== value) {
+      this._lineHeight = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get isBold(): boolean {
+    return this._isBold;
+  }
+
+  set isBold(value: boolean) {
+    if (this._isBold !== value) {
+      this._isBold = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get isItalic(): boolean {
+    return this._isItalic;
+  }
+
+  set isItalic(value: boolean) {
+    if (this._isItalic !== value) {
+      this._isItalic = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   get horizontalAlignment(): TextHorizontalAlignment {
     return this._horizontalAlignment;
   }
@@ -183,6 +295,7 @@ export class TextRenderer extends Renderer {
   set horizontalAlignment(value: TextHorizontalAlignment) {
     if (this._horizontalAlignment !== value) {
       this._horizontalAlignment = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -190,6 +303,12 @@ export class TextRenderer extends Renderer {
   /**
    * The vertical alignment.
    */
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   get verticalAlignment(): TextVerticalAlignment {
     return this._verticalAlignment;
   }
@@ -197,6 +316,7 @@ export class TextRenderer extends Renderer {
   set verticalAlignment(value: TextVerticalAlignment) {
     if (this._verticalAlignment !== value) {
       this._verticalAlignment = value;
+<<<<<<< HEAD
       this._setDirtyFlagTrue(DirtyFlag.Property);
     }
   }
@@ -261,12 +381,49 @@ export class TextRenderer extends Renderer {
     this._sprite = new Sprite(engine);
     this.font = Font.createFromOS(engine);
     this.setMaterial(engine._spriteDefaultMaterial);
+=======
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get horizontalOverflow(): TextHorizontalOverflow {
+    return this._horizontalOverflow;
+  }
+
+  set horizontalOverflow(value: TextHorizontalOverflow) {
+    if (this._horizontalOverflow !== value) {
+      this._horizontalOverflow = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  get verticalOverflow(): TextVerticalOverflow {
+    return this._verticalOverflow;
+  }
+
+  set verticalOverflow(value: TextVerticalOverflow) {
+    if (this._verticalOverflow !== value) {
+      this._verticalOverflow = value;
+      this._styleDirtyFlag = true;
+    }
+  }
+
+  constructor(entity: Entity) {
+    super(entity);
+
+    // const canvas = this._canvas = document.createElement("canvas");
+    // this._context = canvas.getContext("2d");
+    // canvas.width = canvas.height = 1;
+
+    this.sprite = new Sprite(this.engine);
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   }
 
   /**
    * @internal
    */
   _render(camera: Camera): void {
+<<<<<<< HEAD
     if (
       this._text === "" ||
       (this.enableWrapping && this.width <= 0) ||
@@ -322,14 +479,38 @@ export class TextRenderer extends Renderer {
    */
   _cloneTo(target: TextRenderer): void {
     target.font = this._font;
+=======
+    if (this._text === '') {
+      this.sprite.texture = null;
+      return ;
+    }
+
+    if (this._styleDirtyFlag) {
+      this._updateText();
+      this._styleDirtyFlag = false;
+    }
+
+    if (TextRenderer.needPremultiplyAlpha) {
+      this.shaderData.enableMacro("NEED_PREMULTIPLY_ALPHA");
+    } else {
+      this.shaderData.disableMacro("NEED_PREMULTIPLY_ALPHA");
+    }
+
+    super._render(camera);
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   }
 
   /**
    * @override
    */
   protected _updateBounds(worldBounds: BoundingBox): void {
+<<<<<<< HEAD
     const sprite = this._sprite;
     if (sprite && sprite.texture) {
+=======
+    const sprite = this.sprite;
+    if (sprite) {
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
       if (this._customLocalBounds && this._customRootEntity) {
         const worldMatrix = this._customRootEntity.transform.worldMatrix;
         BoundingBox.transform(this._customLocalBounds, worldMatrix, worldBounds);
@@ -344,6 +525,7 @@ export class TextRenderer extends Renderer {
     }
   }
 
+<<<<<<< HEAD
   private _isContainDirtyFlag(type: number): boolean {
     return (this._dirtyFlag & type) != 0;
   }
@@ -439,4 +621,45 @@ enum DirtyFlag {
   Property = 0x1,
   MaskInteraction = 0x2,
   All = 0x3
+=======
+  private _getFontString() {
+    let str = "";
+    if (this.isBold) {
+      str += "bold ";
+    }
+    if (this.isItalic) {
+      str += "italic ";
+    }
+    str += `${this._fontSize}px ${this._fontName}`;
+    return str;
+  }
+
+  private _updateText() {
+    const fontStr = this._getFontString();
+    TextUtils.measureText(TextUtils.textContext(), this, fontStr);
+    this._updateTexture();
+  }
+
+  private _updateTexture() {
+    const textContext = TextUtils.textContext();
+    const { canvas, context } = textContext;
+    if (canvas.width === 0 || canvas.height === 0) {
+      this.sprite.texture = null;
+      return ;
+    }
+    const trimData = TextUtils.trimCanvas(textContext);
+    const { width, height } = trimData;
+    canvas.width = width;
+    canvas.height = height;
+    context.putImageData(trimData.data, 0, 0);
+    const texture = new Texture2D(this.engine, width, height);
+    if (TextRenderer.needPremultiplyAlpha) {
+      texture.setImageSource(canvas, 0, false, true);
+    } else {
+      texture.setImageSource(canvas);
+    }
+    texture.generateMipmaps();
+    this.sprite.texture = texture;
+  }
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
 }

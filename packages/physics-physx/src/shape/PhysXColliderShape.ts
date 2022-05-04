@@ -45,7 +45,11 @@ export abstract class PhysXColliderShape implements IColliderShape {
     if (value !== this._position) {
       value.cloneTo(this._position);
     }
+<<<<<<< HEAD
     this._setLocalPose();
+=======
+    this._setLocalPose(this._scale);
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
   }
 
   /**
@@ -101,9 +105,13 @@ export abstract class PhysXColliderShape implements IColliderShape {
     this._pxShape.setFlags(new PhysXPhysics._physX.PxShapeFlags(this._shapeFlags));
   }
 
-  protected _setLocalPose(): void {
+  protected _setLocalPose(scale: Vector3): void {
     const transform = PhysXColliderShape.transform;
+<<<<<<< HEAD
     Vector3.multiply(this._position, this._scale, transform.translation);
+=======
+    Vector3.multiply(this._position, scale, transform.translation);
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
     transform.rotation = this._rotation;
     this._pxShape.setLocalPose(transform);
   }

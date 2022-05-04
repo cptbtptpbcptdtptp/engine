@@ -134,8 +134,13 @@ export class Texture2D extends Texture {
       (this._platformTexture as IPlatformTexture2D).getPixelBuffer(
         0,
         0,
+<<<<<<< HEAD
         this._width >> (<number>xOrMipLevelOrOut),
         this._height >> (<number>xOrMipLevelOrOut),
+=======
+        this._width >> <number>xOrMipLevelOrOut,
+        this._height >> <number>xOrMipLevelOrOut,
+>>>>>>> fc710ceab08bbcd405260b1e2a781593c4708e13
         <number>xOrMipLevelOrOut,
         <ArrayBufferView>yOrMipLevel
       );
