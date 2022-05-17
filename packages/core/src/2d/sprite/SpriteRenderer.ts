@@ -9,8 +9,10 @@ import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { Shader } from "../../shader/Shader";
 import { ShaderProperty } from "../../shader/ShaderProperty";
 import { UpdateFlag } from "../../UpdateFlag";
+import { SpriteDrawMode } from "../enums/SpriteDrawMode";
 import { SpriteMaskInteraction } from "../enums/SpriteMaskInteraction";
 import { SpriteMaskLayer } from "../enums/SpriteMaskLayer";
+import { ISpriteDraw } from "./IDraw";
 import { Sprite } from "./Sprite";
 
 /**
@@ -19,8 +21,10 @@ import { Sprite } from "./Sprite";
 export class SpriteRenderer extends Renderer implements ICustomClone {
   /** @internal */
   static _textureProperty: ShaderProperty = Shader.getPropertyByName("u_spriteTexture");
-  
+
   private static _tempVec3: Vector3 = new Vector3();
+
+  draw: ISpriteDraw;
 
   /** @internal temp solution. */
   @ignoreClone
@@ -36,6 +40,10 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
   @deepClone
   private _color: Color = new Color(1, 1, 1, 1);
   @assignmentClone
+  private _width: number = 1;
+  @assignmentClone
+  private _height: number = 1;
+  @assignmentClone
   private _flipX: boolean = false;
   @assignmentClone
   private _flipY: boolean = false;
@@ -43,6 +51,8 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
   private _cacheFlipX: boolean = false;
   @assignmentClone
   private _cacheFlipY: boolean = false;
+  @assignmentClone
+  private _drawMode: SpriteDrawMode = SpriteDrawMode.Simple;
   @ignoreClone
   private _dirtyFlag: number = 0;
   @ignoreClone
@@ -67,6 +77,48 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
       this._sprite = value;
       if (value) {
         this._spriteDirty = value._registerUpdateFlag();
+      }
+    }
+  }
+
+  get width() {
+    return this._width;
+  }
+
+  set width(val: number) {
+    this._width = val;
+  }
+
+  get height() {
+    return this._height;
+  }
+
+  set height(val: number) {
+    this.height = val;
+  }
+
+  /**
+   * The draw mode of the SpriteRenderer.
+   */
+  get drawMode(): SpriteDrawMode {
+    return this._drawMode;
+  }
+
+  set drawMode(drawMode: SpriteDrawMode) {
+    if (this._drawMode !== drawMode) {
+      this._drawMode = drawMode;
+      this._positions.length = 4;
+      switch (drawMode) {
+        case SpriteDrawMode.Simple:
+          this._positions.length = 4;
+          break;
+        case SpriteDrawMode.Sliced:
+          this._positions.length = 16;
+          break;
+        case SpriteDrawMode.Tiled:
+          break;
+        default:
+          break;
       }
     }
   }
@@ -255,6 +307,16 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
   protected _updateBounds(worldBounds: BoundingBox): void {
     const sprite = this._sprite;
     if (sprite) {
+      switch (this._drawMode) {
+        case SpriteDrawMode.Simple:
+          break;
+        case SpriteDrawMode.Sliced:
+          const { pivot } = sprite;
+
+          break;
+        default:
+          break;
+      }
       if (this._customLocalBounds && this._customRootEntity) {
         const worldMatrix = this._customRootEntity.transform.worldMatrix;
         BoundingBox.transform(this._customLocalBounds, worldMatrix, worldBounds);
@@ -296,5 +358,6 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
 
 enum DirtyFlag {
   Flip = 0x1,
-  MaskInteraction = 0x2
+  MaskInteraction = 0x2,
+  DrawMode = 0x4
 }

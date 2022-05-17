@@ -446,7 +446,6 @@ export class ParticleRenderer extends MeshRenderer {
       this.shaderData.enableMacro("is2d");
     } else {
       this.shaderData.disableMacro("is2d");
-      this.getMaterial().renderState.rasterState.cullMode = CullMode.Off;
     }
 
     this._is2d = value;
@@ -599,7 +598,7 @@ export class ParticleRenderer extends MeshRenderer {
     target.destinationAlphaBlendFactor = BlendFactor.OneMinusSourceAlpha;
 
     renderState.depthState.writeEnabled = false;
-
+    renderState.rasterState.cullMode = CullMode.Off;
     material.renderQueueType = RenderQueueType.Transparent;
 
     this.isUseOriginColor = true;
