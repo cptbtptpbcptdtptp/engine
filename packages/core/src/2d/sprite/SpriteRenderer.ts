@@ -214,6 +214,15 @@ export class SpriteRenderer extends Renderer implements ICustomClone {
     const { _positions } = this;
     const { transform } = this.entity;
 
+    switch (this._drawMode) {
+      case SpriteDrawMode.Simple:
+        break;
+      case SpriteDrawMode.Sliced:
+        break;
+      default:
+        break;
+    }
+
     // Update sprite data.
     sprite._updateMesh();
 
