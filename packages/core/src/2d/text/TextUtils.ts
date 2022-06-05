@@ -47,7 +47,7 @@ export class TextUtils {
   private static _baselineMultiplier: number = 1.4;
   private static _maxWidth: number = 2048;
   private static _maxHeight: number = 2048;
-  private static _pixelsPerUnit: number = 128;
+  private static _pixelsPerUnit: number = 100;
   private static _fontSizeCache: Record<string, number> = {};
   private static _textContext: TextContext = null;
   private static _tempVec2: Vector2 = new Vector2();

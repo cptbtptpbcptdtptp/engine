@@ -300,8 +300,8 @@ export class TextRenderer extends Renderer {
     spriteElement.setValue(
       this,
       this._positions,
-      sprite._uv,
-      sprite._triangles,
+      sprite.uv,
+      Sprite._rectangleTriangles,
       this.color,
       this.getMaterial(),
       camera
