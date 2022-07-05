@@ -277,7 +277,6 @@ export class Engine extends EventDispatcher {
     const scene = this._sceneManager._activeScene;
     const componentsManager = this._componentsManager;
     if (scene) {
-      scene._activeCameras.sort((camera1, camera2) => camera1.priority - camera2.priority);
 
       componentsManager.callScriptOnStart();
       if (this.physicsManager._initialized) {
@@ -367,6 +366,7 @@ export class Engine extends EventDispatcher {
     scene._updateShaderData();
 
     if (cameras.length > 0) {
+      cameras.sort((camera1, camera2) => camera1.priority - camera2.priority);
       for (let i = 0, n = cameras.length; i < n; i++) {
         const camera = cameras[i];
         componentsManager.callCameraOnBeginRender(camera);
