@@ -5,8 +5,8 @@ import { Engine } from "../../Engine";
 import { Entity } from "../../Entity";
 import { CameraClearFlags } from "../../enums/CameraClearFlags";
 import { HitResult } from "../../physics";
-import { PointerPhase } from "../enums/PointerPhase";
 import { PointerButton } from "../enums/PointerButton";
+import { PointerPhase } from "../enums/PointerPhase";
 import { IInput } from "../interface/IInput";
 import { Pointer } from "./Pointer";
 
@@ -21,6 +21,7 @@ export class PointerManager implements IInput {
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
   private static _tempHitResult: HitResult = new HitResult();
+  
   /** @internal */
   _pointers: Pointer[] = [];
   /** @internal */
@@ -39,10 +40,10 @@ export class PointerManager implements IInput {
   private _engine: Engine;
   private _canvas: Canvas;
   private _htmlCanvas: HTMLCanvasElement;
-  private _nativeEvents = [];
+  private _nativeEvents: PointerEvent[] = [];
   private _pointerPool: Pointer[];
   private _hadListener: boolean = false;
-  private _pointerIDMap = [];
+  private _pointerIDMap: number[] = [];
 
   /**
    * Create a PointerManager.
@@ -53,7 +54,7 @@ export class PointerManager implements IInput {
     this._engine = engine;
     this._canvas = engine.canvas;
     this._htmlCanvas = htmlCanvas;
-    htmlCanvas.oncontextmenu = (event: UIEvent) => {
+    htmlCanvas.oncontextmenu = () => {
       return false;
     };
     this._onPointerEvent = this._onPointerEvent.bind(this);
@@ -69,7 +70,7 @@ export class PointerManager implements IInput {
    */
   _update(frameCount: number): void {
     const { _pointers: pointers, _nativeEvents: nativeEvents } = this;
-    /** Clean up the pointer released in the previous frame. */
+    // Clean up the pointer released in the previous frame.
     let length = pointers.length;
     if (length > 0) {
       for (let i = length - 1; i >= 0; i--) {
@@ -81,7 +82,7 @@ export class PointerManager implements IInput {
       pointers.length = length;
     }
 
-    /** Generate the pointer received for this frame. */
+    // Generate the pointer received for this frame.
     length = nativeEvents.length;
     if (length > 0) {
       this._buttons = nativeEvents[length - 1].buttons;
@@ -92,7 +93,7 @@ export class PointerManager implements IInput {
       nativeEvents.length = 0;
     }
 
-    /** Pointer handles its own events. */
+    // Pointer handles its own events.
     length = pointers.length;
     if (length > 0) {
       const updatePointer = this._engine.physicsManager._initialized
@@ -162,7 +163,7 @@ export class PointerManager implements IInput {
     this._engine = null;
   }
 
-  private _onPointerEvent(evt: PointerEvent) {
+  private _onPointerEvent(evt: PointerEvent): void {
     evt.cancelable && evt.preventDefault();
     this._nativeEvents.push(evt);
   }
