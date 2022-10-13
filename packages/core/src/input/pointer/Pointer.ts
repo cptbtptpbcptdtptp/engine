@@ -12,6 +12,7 @@ export class Pointer {
    * @remark Start from 0.
    */
   readonly id: number;
+
   /** @internal */
   _events: PointerEvent[] = [];
 
@@ -36,11 +37,14 @@ export class Pointer {
   private _currentPressedEntity: Entity;
   private _currentEnteredEntity: Entity;
 
-  /** @internal */
+  /**
+   * @internal
+   */
   _firePointerExitAndEnter(rayCastEntity: Entity): void {
-    if (this._currentEnteredEntity !== rayCastEntity) {
-      if (this._currentEnteredEntity) {
-        const scripts = this._currentEnteredEntity._scripts;
+    const enteredEntity = this._currentEnteredEntity;
+    if (enteredEntity !== rayCastEntity) {
+      if (enteredEntity) {
+        const scripts = enteredEntity._scripts;
         for (let i = scripts.length - 1; i >= 0; i--) {
           const script = scripts.get(i);
           script._waitHandlingInValid || script.onPointerExit(this);
@@ -57,7 +61,9 @@ export class Pointer {
     }
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   _firePointerDown(rayCastEntity: Entity): void {
     if (rayCastEntity) {
       const scripts = rayCastEntity._scripts;
@@ -69,7 +75,9 @@ export class Pointer {
     this._currentPressedEntity = rayCastEntity;
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   _firePointerDrag(): void {
     if (this._currentPressedEntity) {
       const scripts = this._currentPressedEntity._scripts;
@@ -80,9 +88,11 @@ export class Pointer {
     }
   }
 
-  /** @internal */
+  /**
+   * @internal
+   */
   _firePointerUpAndClick(rayCastEntity: Entity): void {
-    const { _currentPressedEntity: pressedEntity } = this;
+    const pressedEntity = this._currentPressedEntity;
     if (pressedEntity) {
       const sameTarget = pressedEntity === rayCastEntity;
       const scripts = pressedEntity._scripts;

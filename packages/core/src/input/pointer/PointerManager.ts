@@ -5,8 +5,8 @@ import { Engine } from "../../Engine";
 import { Entity } from "../../Entity";
 import { CameraClearFlags } from "../../enums/CameraClearFlags";
 import { HitResult } from "../../physics";
-import { PointerPhase } from "../enums/PointerPhase";
 import { PointerButton } from "../enums/PointerButton";
+import { PointerPhase } from "../enums/PointerPhase";
 import { IInput } from "../interface/IInput";
 import { Pointer } from "./Pointer";
 
@@ -16,11 +16,12 @@ import { Pointer } from "./Pointer";
  */
 export class PointerManager implements IInput {
   /** Refer to the W3C standards.(https://www.w3.org/TR/uievents/#dom-mouseevent-buttons) */
-  public static Buttons = [0x1, 0x4, 0x2, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400];
+  public static Buttons: number[] = [0x1, 0x4, 0x2, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400];
 
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
   private static _tempHitResult: HitResult = new HitResult();
+
   /** @internal */
   _pointers: Pointer[] = [];
   /** @internal */
@@ -39,10 +40,10 @@ export class PointerManager implements IInput {
   private _engine: Engine;
   private _canvas: Canvas;
   private _htmlCanvas: HTMLCanvasElement;
-  private _nativeEvents = [];
+  private _nativeEvents: PointerEvent[] = [];
   private _pointerPool: Pointer[];
   private _hadListener: boolean = false;
-  private _pointerIDMap = [];
+  private _pointerIDList: number[] = [];
 
   /**
    * Create a PointerManager.
@@ -53,7 +54,7 @@ export class PointerManager implements IInput {
     this._engine = engine;
     this._canvas = engine.canvas;
     this._htmlCanvas = htmlCanvas;
-    htmlCanvas.oncontextmenu = (event: UIEvent) => {
+    htmlCanvas.oncontextmenu = () => {
       return false;
     };
     this._onPointerEvent = this._onPointerEvent.bind(this);
@@ -69,7 +70,8 @@ export class PointerManager implements IInput {
    */
   _update(frameCount: number): void {
     const { _pointers: pointers, _nativeEvents: nativeEvents } = this;
-    /** Clean up the pointer released in the previous frame. */
+
+    // Clean up the pointer released in the previous frame.
     let length = pointers.length;
     if (length > 0) {
       for (let i = length - 1; i >= 0; i--) {
@@ -81,7 +83,7 @@ export class PointerManager implements IInput {
       pointers.length = length;
     }
 
-    /** Generate the pointer received for this frame. */
+    // Generate the pointer received for this frame.
     length = nativeEvents.length;
     if (length > 0) {
       this._buttons = nativeEvents[length - 1].buttons;
@@ -92,7 +94,7 @@ export class PointerManager implements IInput {
       nativeEvents.length = 0;
     }
 
-    /** Pointer handles its own events. */
+    // Pointer handles its own events.
     length = pointers.length;
     if (length > 0) {
       const updatePointer = this._engine.physicsManager._initialized
@@ -162,33 +164,32 @@ export class PointerManager implements IInput {
     this._engine = null;
   }
 
-  private _onPointerEvent(evt: PointerEvent) {
+  private _onPointerEvent(evt: PointerEvent): void {
     evt.cancelable && evt.preventDefault();
     this._nativeEvents.push(evt);
   }
 
   private _getPointer(pointerId: number, frameCount: number): Pointer {
     const { _pointers: pointers } = this;
-    const index = this._pointerIDMap.indexOf(pointerId);
+    const index = this._pointerIDList.indexOf(pointerId);
     if (index >= 0) {
       return pointers[index];
     } else {
       const lastCount = pointers.length;
       if (lastCount === 0 || this._multiPointerEnabled) {
         const { _pointerPool: pointerPool } = this;
-        // Get Pointer smallest index.
-        let i = 0;
-        for (; i < lastCount; i++) {
-          if (pointers[i].id > i) {
+        let insertIndex = 0;
+        for (; insertIndex < lastCount; insertIndex++) {
+          if (pointers[insertIndex].id > insertIndex) {
             break;
           }
         }
-        let pointer = pointerPool[i];
+        let pointer = pointerPool[insertIndex];
         if (!pointer) {
-          pointer = pointerPool[i] = new Pointer(pointerId);
+          pointer = pointerPool[insertIndex] = new Pointer(pointerId);
         }
-        this._pointerIDMap[i] = pointerId;
-        pointers.splice(i, 0, pointer);
+        this._pointerIDList[insertIndex] = pointerId;
+        pointers.splice(insertIndex, 0, pointer);
         pointer.frameCount = frameCount;
         return pointer;
       } else {
@@ -254,7 +255,7 @@ export class PointerManager implements IInput {
       let hadMoved = false;
       for (let i = 0; i < length; i++) {
         const event = events[i];
-        const pointerButton: PointerButton = (pointer.button = event.button | PointerButton.Primary);
+        const pointerButton = <PointerButton>(pointer.button = event.button | PointerButton.Primary);
         pointer.buttons = event.buttons;
         switch (event.type) {
           case "pointerdown":
