@@ -16,12 +16,12 @@ import { Pointer } from "./Pointer";
  */
 export class PointerManager implements IInput {
   /** Refer to the W3C standards.(https://www.w3.org/TR/uievents/#dom-mouseevent-buttons) */
-  public static Buttons = [0x1, 0x4, 0x2, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400];
+  public static Buttons: number[] = [0x1, 0x4, 0x2, 0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200, 0x400];
 
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
   private static _tempHitResult: HitResult = new HitResult();
-  
+
   /** @internal */
   _pointers: Pointer[] = [];
   /** @internal */
