@@ -178,19 +178,18 @@ export class PointerManager implements IInput {
       const lastCount = pointers.length;
       if (lastCount === 0 || this._multiPointerEnabled) {
         const { _pointerPool: pointerPool } = this;
-        // Get Pointer smallest index.
-        let i = 0;
-        for (; i < lastCount; i++) {
-          if (pointers[i].id > i) {
+        let insertIndex = 0;
+        for (; insertIndex < lastCount; insertIndex++) {
+          if (pointers[insertIndex].id > insertIndex) {
             break;
           }
         }
-        let pointer = pointerPool[i];
+        let pointer = pointerPool[insertIndex];
         if (!pointer) {
-          pointer = pointerPool[i] = new Pointer(pointerId);
+          pointer = pointerPool[insertIndex] = new Pointer(pointerId);
         }
-        this._pointerIDList[i] = pointerId;
-        pointers.splice(i, 0, pointer);
+        this._pointerIDList[insertIndex] = pointerId;
+        pointers.splice(insertIndex, 0, pointer);
         pointer.frameCount = frameCount;
         return pointer;
       } else {
