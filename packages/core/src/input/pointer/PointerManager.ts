@@ -43,7 +43,7 @@ export class PointerManager implements IInput {
   private _nativeEvents: PointerEvent[] = [];
   private _pointerPool: Pointer[];
   private _hadListener: boolean = false;
-  private _pointerIDMap: number[] = [];
+  private _pointerIDList: number[] = [];
 
   /**
    * Create a PointerManager.
@@ -70,6 +70,7 @@ export class PointerManager implements IInput {
    */
   _update(frameCount: number): void {
     const { _pointers: pointers, _nativeEvents: nativeEvents } = this;
+
     // Clean up the pointer released in the previous frame.
     let length = pointers.length;
     if (length > 0) {
@@ -170,7 +171,7 @@ export class PointerManager implements IInput {
 
   private _getPointer(pointerId: number, frameCount: number): Pointer {
     const { _pointers: pointers } = this;
-    const index = this._pointerIDMap.indexOf(pointerId);
+    const index = this._pointerIDList.indexOf(pointerId);
     if (index >= 0) {
       return pointers[index];
     } else {
@@ -188,7 +189,7 @@ export class PointerManager implements IInput {
         if (!pointer) {
           pointer = pointerPool[i] = new Pointer(pointerId);
         }
-        this._pointerIDMap[i] = pointerId;
+        this._pointerIDList[i] = pointerId;
         pointers.splice(i, 0, pointer);
         pointer.frameCount = frameCount;
         return pointer;
@@ -255,7 +256,7 @@ export class PointerManager implements IInput {
       let hadMoved = false;
       for (let i = 0; i < length; i++) {
         const event = events[i];
-        const pointerButton: PointerButton = (pointer.button = event.button | PointerButton.Primary);
+        const pointerButton = <PointerButton>(pointer.button = event.button | PointerButton.Primary);
         pointer.buttons = event.buttons;
         switch (event.type) {
           case "pointerdown":
