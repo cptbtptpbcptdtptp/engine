@@ -1,4 +1,6 @@
 import { Vector3 } from "@oasis-engine/math";
+import { InputType } from "../enums/InputType";
+import { InputManager } from "../InputManager";
 import { IInput } from "../interface/IInput";
 
 /**
@@ -9,18 +11,61 @@ export class WheelManager implements IInput {
   /** @internal */
   _delta: Vector3 = new Vector3();
 
+  private _enable: boolean = true;
+  private _target: HTMLElement = null;
+  private _preventDefault: boolean = false;
+  private _stopPropagation: boolean = false;
   private _nativeEvents: WheelEvent[] = [];
-  private _canvas: HTMLCanvasElement;
-  private _hadListener: boolean;
+  private _hadListener: boolean = false;
+
+  get enable() {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._enable !== value) {
+      this._enable = value;
+      if (value) {
+        this._onFocus();
+      } else {
+        this._onBlur();
+      }
+    }
+  }
+
+  get target() {
+    return this._target;
+  }
+
+  set target(value: HTMLElement) {
+    if (this._target !== value) {
+      this._onBlur();
+      this._target = value;
+      this._onFocus();
+    }
+  }
+
+  get preventDefault() {
+    return this._preventDefault;
+  }
+
+  set preventDefault(value: boolean) {
+    this._preventDefault = value;
+  }
+
+  get stopPropagation() {
+    return this._stopPropagation;
+  }
+
+  set stopPropagation(value: boolean) {
+    this._stopPropagation = value;
+  }
 
   /**
    * Create a KeyboardManager.
    */
-  constructor(htmlCanvas: HTMLCanvasElement) {
+  constructor() {
     this._onWheelEvent = this._onWheelEvent.bind(this);
-    htmlCanvas.addEventListener("wheel", this._onWheelEvent);
-    this._canvas = htmlCanvas;
-    this._hadListener = true;
   }
 
   /**
@@ -45,8 +90,8 @@ export class WheelManager implements IInput {
    * @internal
    */
   _onFocus(): void {
-    if (!this._hadListener) {
-      this._canvas.addEventListener("wheel", this._onWheelEvent);
+    if (!this._hadListener && this._target) {
+      this._target.addEventListener("wheel", this._onWheelEvent);
       this._hadListener = true;
     }
   }
@@ -56,7 +101,7 @@ export class WheelManager implements IInput {
    */
   _onBlur(): void {
     if (this._hadListener) {
-      this._canvas.removeEventListener("wheel", this._onWheelEvent);
+      this._target.removeEventListener("wheel", this._onWheelEvent);
       this._nativeEvents.length = 0;
       this._delta.set(0, 0, 0);
       this._hadListener = false;
@@ -68,7 +113,7 @@ export class WheelManager implements IInput {
    */
   _destroy(): void {
     if (this._hadListener) {
-      this._canvas.removeEventListener("wheel", this._onWheelEvent);
+      this._target.removeEventListener("wheel", this._onWheelEvent);
       this._hadListener = false;
     }
     this._nativeEvents = null;
@@ -79,3 +124,5 @@ export class WheelManager implements IInput {
     this._nativeEvents.push(evt);
   }
 }
+
+InputManager.registerInput(InputType.Wheel, WheelManager);

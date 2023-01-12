@@ -6,34 +6,62 @@ import { PointerManager } from "./pointer/PointerManager";
 import { PointerButton, _pointerBin2DecMap } from "./enums/PointerButton";
 import { WheelManager } from "./wheel/WheelManager";
 import { Vector3 } from "@oasis-engine/math";
+import { IInput } from "./interface/IInput";
+import { InputType } from "./enums/InputType";
+import { IInputSetting } from "./interface/IInputSetting";
 
 /**
  * InputManager manages device input such as mouse, touch, keyboard, etc.
  */
 export class InputManager {
-  /** Sometimes the input module will not be initialized, such as off-screen rendering. */
-  private _initialized: boolean = false;
-  private _curFrameCount: number = 0;
-  private _wheelManager: WheelManager;
-  private _pointerManager: PointerManager;
-  private _keyboardManager: KeyboardManager;
+  static _inputClassMap: (new () => IInput)[] = new Array<new () => IInput>(InputType.length);
+
+  static registerInput(inputType: InputType, input: new () => IInput) {
+    this._inputClassMap[inputType] = input;
+  }
+
+  private _engine: Engine;
+  private _enableFocusAndBlur: boolean = false;
+  private _inputSetting: IInputSetting[] = new Array<IInputSetting>(InputType.length);
+  private _inputInstances: IInput[] = new Array<IInput>(InputType.length);
+  private _inputEnableMap: boolean[] = new Array<boolean>(InputType.length);
 
   /**
    * Pointer list.
    */
   get pointers(): Readonly<Pointer[]> {
-    return this._initialized ? this._pointerManager._pointers : [];
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    return pointerManager ? pointerManager._pointers : [];
   }
 
   /**
    *  Whether to handle multi-pointer.
    */
   get multiPointerEnabled(): boolean {
-    return this._initialized ? this._pointerManager._multiPointerEnabled : false;
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    return pointerManager ? pointerManager._multiPointerEnabled : false;
   }
 
   set multiPointerEnabled(enabled: boolean) {
-    this._initialized && (this._pointerManager._multiPointerEnabled = enabled);
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    pointerManager && (pointerManager._multiPointerEnabled = enabled);
+  }
+
+  get enableFocusAndBlur(): boolean {
+    return this._enableFocusAndBlur;
+  }
+
+  set enableFocusAndBlur(value: boolean) {
+    if (this._enableFocusAndBlur !== value) {
+      this._enableFocusAndBlur = value;
+      if (value) {
+        window.addEventListener("blur", this._onBlur);
+        window.addEventListener("focus", this._onFocus);
+      } else {
+        window.removeEventListener("blur", this._onBlur);
+        window.removeEventListener("focus", this._onFocus);
+      }
+    }
   }
 
   /**
@@ -41,7 +69,67 @@ export class InputManager {
    * @returns Change value
    */
   get wheelDelta(): Readonly<Vector3 | null> {
-    return this._initialized ? this._wheelManager._delta : null;
+    const wheelManager = this.getInput<WheelManager>(InputType.Wheel);
+    return wheelManager ? wheelManager._delta : null;
+  }
+
+  getInput<T>(inputType: InputType): T {
+    return this._inputInstances[inputType] as T;
+  }
+
+  enableInput(inputType: InputType) {
+    if (!this._inputEnableMap[inputType]) {
+      this._inputEnableMap[inputType] = true;
+      if (this._inputInstances[inputType]) {
+        this._inputInstances[inputType].enable = true;
+      }
+    }
+  }
+
+  disableInput(inputType: InputType) {
+    if (!!this._inputEnableMap[inputType]) {
+      this._inputEnableMap[inputType] = false;
+      if (this._inputInstances[inputType]) {
+        this._inputInstances[inputType].enable = false;
+      }
+    }
+  }
+
+  getInputSetting(inputType: InputType): IInputSetting {
+    return this._inputSetting[inputType];
+  }
+
+  setTarget(inputType: InputType, target: HTMLElement) {
+    if (this._inputSetting[inputType]) {
+      this._inputSetting[inputType].target = target;
+    } else {
+      this._inputSetting[inputType] = { target };
+    }
+    if (this._inputInstances[inputType]) {
+      this._inputInstances[inputType].target = target;
+    }
+  }
+
+  setPreventDefault(inputType: InputType, preventDefault: boolean) {
+    if (this._inputSetting[inputType]) {
+      this._inputSetting[inputType].preventDefault = preventDefault;
+    } else {
+      this._inputSetting[inputType] = { preventDefault };
+    }
+    if (this._inputInstances[inputType]) {
+      this._inputInstances[inputType].preventDefault = preventDefault;
+    }
+  }
+
+  setStopPropagation(inputType: InputType, stopPropagation: boolean) {
+    if (this._inputSetting[inputType]) {
+      this._inputSetting[inputType].stopPropagation = stopPropagation;
+    } else {
+      this._inputSetting[inputType] = { stopPropagation };
+    }
+    if (this._inputInstances[inputType]) {
+      this._inputInstances[inputType].stopPropagation = stopPropagation;
+    }
   }
 
   /**
@@ -50,11 +138,12 @@ export class InputManager {
    * @returns Whether the key is being held down
    */
   isKeyHeldDown(key?: Keys): boolean {
-    if (this._initialized) {
+    const keyboardManager = this.getInput<KeyboardManager>(InputType.Keyboard);
+    if (keyboardManager) {
       if (key === undefined) {
-        return this._keyboardManager._curFrameHeldDownList.length > 0;
+        return keyboardManager._curFrameHeldDownList.length > 0;
       } else {
-        return this._keyboardManager._curHeldDownKeyToIndexMap[key] != null;
+        return keyboardManager._curHeldDownKeyToIndexMap[key] != null;
       }
     } else {
       return false;
@@ -67,11 +156,12 @@ export class InputManager {
    * @returns Whether the key starts to be pressed down during the current frame
    */
   isKeyDown(key?: Keys): boolean {
-    if (this._initialized) {
+    const keyboardManager = this.getInput<KeyboardManager>(InputType.Keyboard);
+    if (keyboardManager) {
       if (key === undefined) {
-        return this._keyboardManager._curFrameDownList.length > 0;
+        return keyboardManager._curFrameDownList.length > 0;
       } else {
-        return this._keyboardManager._downKeyToFrameCountMap[key] === this._curFrameCount;
+        return keyboardManager._downKeyToFrameCountMap[key] === this._engine.time._frameCount;
       }
     } else {
       return false;
@@ -84,11 +174,12 @@ export class InputManager {
    * @returns Whether the key is released during the current frame
    */
   isKeyUp(key?: Keys): boolean {
-    if (this._initialized) {
+    const keyboardManager = this.getInput<KeyboardManager>(InputType.Keyboard);
+    if (keyboardManager) {
       if (key === undefined) {
-        return this._keyboardManager._curFrameUpList.length > 0;
+        return keyboardManager._curFrameUpList.length > 0;
       } else {
-        return this._keyboardManager._upKeyToFrameCountMap[key] === this._curFrameCount;
+        return keyboardManager._upKeyToFrameCountMap[key] === this._engine.time._frameCount;
       }
     } else {
       return false;
@@ -101,11 +192,12 @@ export class InputManager {
    * @returns Whether the pointer is being held down
    */
   isPointerHeldDown(pointerButton?: PointerButton): boolean {
-    if (this._initialized) {
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    if (pointerManager) {
       if (pointerButton === undefined) {
-        return this._pointerManager._buttons !== 0;
+        return pointerManager._buttons !== 0;
       } else {
-        return (this._pointerManager._buttons & pointerButton) !== 0;
+        return (pointerManager._buttons & pointerButton) !== 0;
       }
     } else {
       return false;
@@ -118,11 +210,12 @@ export class InputManager {
    * @returns Whether the pointer starts to be pressed down during the current frame
    */
   isPointerDown(pointerButton?: PointerButton): boolean {
-    if (this._initialized) {
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    if (pointerManager) {
       if (pointerButton === undefined) {
-        return this._pointerManager._downList.length > 0;
+        return pointerManager._downList.length > 0;
       } else {
-        return this._pointerManager._downMap[_pointerBin2DecMap[pointerButton]] === this._curFrameCount;
+        return pointerManager._downMap[_pointerBin2DecMap[pointerButton]] === this._engine.time._frameCount;
       }
     } else {
       return false;
@@ -135,11 +228,12 @@ export class InputManager {
    * @returns Whether the pointer is released during the current frame
    */
   isPointerUp(pointerButton?: PointerButton): boolean {
-    if (this._initialized) {
+    const pointerManager = this.getInput<PointerManager>(InputType.Pointer);
+    if (pointerManager) {
       if (pointerButton === undefined) {
-        return this._pointerManager._upList.length > 0;
+        return pointerManager._upList.length > 0;
       } else {
-        return this._pointerManager._upMap[_pointerBin2DecMap[pointerButton]] === this._curFrameCount;
+        return pointerManager._upMap[_pointerBin2DecMap[pointerButton]] === this._engine.time._frameCount;
       }
     } else {
       return false;
@@ -150,17 +244,19 @@ export class InputManager {
    * @internal
    */
   constructor(engine: Engine) {
+    this._engine = engine;
     // @ts-ignore
     const canvas = engine._canvas._webCanvas;
     if (typeof OffscreenCanvas === "undefined" || !(canvas instanceof OffscreenCanvas)) {
-      this._wheelManager = new WheelManager(canvas);
-      this._pointerManager = new PointerManager(engine, canvas);
-      this._keyboardManager = new KeyboardManager(canvas);
+      this.enableInput(InputType.Pointer);
+      this.enableInput(InputType.Keyboard);
+      this.enableInput(InputType.Wheel);
       this._onBlur = this._onBlur.bind(this);
-      window.addEventListener("blur", this._onBlur);
       this._onFocus = this._onFocus.bind(this);
-      window.addEventListener("focus", this._onFocus);
-      this._initialized = true;
+      if (this._enableFocusAndBlur) {
+        window.addEventListener("blur", this._onBlur);
+        window.addEventListener("focus", this._onFocus);
+      }
     }
   }
 
@@ -168,11 +264,9 @@ export class InputManager {
    * @internal
    */
   _update(): void {
-    if (this._initialized) {
-      ++this._curFrameCount;
-      this._wheelManager._update();
-      this._pointerManager._update(this._curFrameCount);
-      this._keyboardManager._update(this._curFrameCount);
+    const { _inputInstances: _inputInsMap, _inputEnableMap: inputEnableMap } = this;
+    for (let i = 0, l = InputType.length; i < l; i++) {
+      !!inputEnableMap[i] && _inputInsMap[i]?._update();
     }
   }
 
@@ -180,24 +274,25 @@ export class InputManager {
    * @internal
    */
   _destroy(): void {
-    if (this._initialized) {
-      window.removeEventListener("blur", this._onBlur);
-      window.removeEventListener("focus", this._onFocus);
-      this._wheelManager._destroy();
-      this._pointerManager._destroy();
-      this._keyboardManager._destroy();
+    window.removeEventListener("blur", this._onBlur);
+    window.removeEventListener("focus", this._onFocus);
+    const { _inputInstances: _inputInsMap } = this;
+    for (let i = 0, l = InputType.length; i < l; i++) {
+      _inputInsMap[i]?._destroy();
     }
   }
 
   private _onBlur(): void {
-    this._wheelManager._onBlur();
-    this._pointerManager._onBlur();
-    this._keyboardManager._onBlur();
+    const { _inputInstances: _inputInsMap, _inputEnableMap: inputEnableMap } = this;
+    for (let i = 0, l = InputType.length; i < l; i++) {
+      !!inputEnableMap[i] && _inputInsMap[i]?._onBlur();
+    }
   }
 
   private _onFocus(): void {
-    this._wheelManager._onFocus();
-    this._pointerManager._onFocus();
-    this._keyboardManager._onFocus();
+    const { _inputInstances: _inputInsMap, _inputEnableMap: inputEnableMap } = this;
+    for (let i = 0, l = InputType.length; i < l; i++) {
+      !!inputEnableMap[i] && _inputInsMap[i]?._onFocus();
+    }
   }
 }

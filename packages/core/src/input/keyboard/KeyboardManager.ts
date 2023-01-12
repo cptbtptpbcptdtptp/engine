@@ -1,5 +1,7 @@
 import { DisorderedArray } from "../../DisorderedArray";
+import { InputType } from "../enums/InputType";
 import { Keys } from "../enums/Keys";
+import { InputManager } from "../InputManager";
 import { IInput } from "../interface/IInput";
 
 /**
@@ -21,20 +23,61 @@ export class KeyboardManager implements IInput {
   /** @internal */
   _curFrameUpList: DisorderedArray<Keys> = new DisorderedArray();
 
-  private _htmlCanvas: HTMLCanvasElement;
+  private _enable: boolean = false;
+  private _target: HTMLElement = null;
+  private _preventDefault: boolean = false;
+  private _stopPropagation: boolean = false;
   private _nativeEvents: KeyboardEvent[] = [];
   private _hadListener: boolean = false;
+
+  get enable() {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._enable !== value) {
+      this._enable = value;
+      if (value) {
+        this._onFocus();
+      } else {
+        this._onBlur();
+      }
+    }
+  }
+
+  get target() {
+    return this._target;
+  }
+
+  set target(value: HTMLElement) {
+    if (this._target !== value) {
+      this._onBlur();
+      this._target = value;
+      this._onFocus();
+    }
+  }
+
+  get preventDefault() {
+    return this._preventDefault;
+  }
+
+  set preventDefault(value: boolean) {
+    this._preventDefault = value;
+  }
+
+  get stopPropagation() {
+    return this._stopPropagation;
+  }
+
+  set stopPropagation(value: boolean) {
+    this._stopPropagation = value;
+  }
 
   /**
    * Create a KeyboardManager.
    */
-  constructor(htmlCanvas: HTMLCanvasElement) {
-    this._htmlCanvas = htmlCanvas;
-    // Need to set tabIndex to make the canvas focus.
-    htmlCanvas.tabIndex = htmlCanvas.tabIndex;
+  constructor() {
     this._onKeyEvent = this._onKeyEvent.bind(this);
-    htmlCanvas.addEventListener("keydown", this._onKeyEvent);
-    htmlCanvas.addEventListener("keyup", this._onKeyEvent);
     this._hadListener = true;
   }
 
@@ -88,8 +131,8 @@ export class KeyboardManager implements IInput {
    */
   _onFocus(): void {
     if (!this._hadListener) {
-      this._htmlCanvas.addEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.addEventListener("keyup", this._onKeyEvent);
+      document.addEventListener("keydown", this._onKeyEvent);
+      document.addEventListener("keyup", this._onKeyEvent);
       this._hadListener = true;
     }
   }
@@ -99,8 +142,8 @@ export class KeyboardManager implements IInput {
    */
   _onBlur(): void {
     if (this._hadListener) {
-      this._htmlCanvas.removeEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.removeEventListener("keyup", this._onKeyEvent);
+      document.removeEventListener("keydown", this._onKeyEvent);
+      document.removeEventListener("keyup", this._onKeyEvent);
       this._curHeldDownKeyToIndexMap.length = 0;
       this._curFrameHeldDownList.length = 0;
       this._curFrameDownList.length = 0;
@@ -115,8 +158,8 @@ export class KeyboardManager implements IInput {
    */
   _destroy(): void {
     if (this._hadListener) {
-      this._htmlCanvas.removeEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.removeEventListener("keyup", this._onKeyEvent);
+      document.removeEventListener("keydown", this._onKeyEvent);
+      document.removeEventListener("keyup", this._onKeyEvent);
       this._hadListener = false;
     }
     this._curHeldDownKeyToIndexMap = null;
@@ -130,6 +173,10 @@ export class KeyboardManager implements IInput {
   }
 
   private _onKeyEvent(evt: KeyboardEvent): void {
+    this._preventDefault && evt.cancelable && evt.preventDefault();
+    this._stopPropagation && evt.stopPropagation();
     this._nativeEvents.push(evt);
   }
 }
+
+InputManager.registerInput(InputType.Wheel, KeyboardManager);

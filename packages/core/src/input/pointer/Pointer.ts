@@ -1,6 +1,7 @@
 import { Vector2 } from "@oasis-engine/math";
 import { DisorderedArray } from "../../DisorderedArray";
 import { Entity } from "../../Entity";
+import { HitResult } from "../../physics";
 import { PointerButton } from "../enums/PointerButton";
 import { PointerPhase } from "../enums/PointerPhase";
 
@@ -23,6 +24,8 @@ export class Pointer {
   position: Vector2 = new Vector2();
   /** The change of the pointer. */
   deltaPosition: Vector2 = new Vector2();
+  /** The hit result of the pointer. */
+  hitResult: HitResult = new HitResult();
   /** @internal */
   _events: PointerEvent[] = [];
   /** @internal */

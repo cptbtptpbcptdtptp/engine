@@ -1,4 +1,15 @@
 export interface IInput {
+  get enable();
+  set enable(value: boolean);
+
+  get target();
+  set target(value: HTMLElement);
+
+  get preventDefault();
+  set preventDefault(value: boolean);
+
+  get stopPropagation();
+  set stopPropagation(value: boolean);
   /**
    * Handler function updated every frame.
    */

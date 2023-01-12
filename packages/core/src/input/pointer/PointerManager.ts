@@ -2,7 +2,6 @@ import { Ray, Vector2 } from "@oasis-engine/math";
 import { Canvas } from "../../Canvas";
 import { DisorderedArray } from "../../DisorderedArray";
 import { Engine } from "../../Engine";
-import { Entity } from "../../Entity";
 import { CameraClearFlags } from "../../enums/CameraClearFlags";
 import { HitResult } from "../../physics";
 import { PointerPhase } from "../enums/PointerPhase";
@@ -17,7 +16,6 @@ import { Pointer } from "./Pointer";
 export class PointerManager implements IInput {
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
-  private static _tempHitResult: HitResult = new HitResult();
   /** @internal */
   _pointers: Pointer[] = [];
   /** @internal */
@@ -35,27 +33,73 @@ export class PointerManager implements IInput {
 
   private _engine: Engine;
   private _canvas: Canvas;
+  private _target: HTMLElement;
+  private _preventDefault: boolean;
+  private _stopPropagation: boolean;
   private _htmlCanvas: HTMLCanvasElement;
   private _nativeEvents: PointerEvent[] = [];
   private _pointerPool: Pointer[];
+  private _enable: boolean = true;
   private _hadListener: boolean = false;
+
+  get enable() {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._enable !== value) {
+      this._enable = value;
+      if (value) {
+        this._onFocus();
+      } else {
+        this._onBlur();
+      }
+    }
+  }
+
+  get target() {
+    return this._target;
+  }
+
+  set target(element: HTMLElement) {
+    if (this._target !== element) {
+      this._onBlur();
+      this._target = element;
+      this._onFocus();
+    }
+  }
+
+  get preventDefault() {
+    return this._preventDefault;
+  }
+
+  set preventDefault(value: boolean) {
+    this._preventDefault = value;
+  }
+
+  get stopPropagation() {
+    return this._stopPropagation;
+  }
+
+  set stopPropagation(value: boolean) {
+    this._stopPropagation = value;
+  }
 
   /**
    * Create a PointerManager.
    * @param engine - The current engine instance
    * @param htmlCanvas - HTMLCanvasElement
    */
-  constructor(engine: Engine, htmlCanvas: HTMLCanvasElement) {
+  constructor(engine: Engine) {
     this._engine = engine;
     this._canvas = engine.canvas;
-    this._htmlCanvas = htmlCanvas;
+    this._htmlCanvas = engine.canvas;
     htmlCanvas.oncontextmenu = (event: UIEvent) => {
       return false;
     };
     this._onPointerEvent = this._onPointerEvent.bind(this);
     this._updatePointerWithPhysics = this._updatePointerWithPhysics.bind(this);
     this._updatePointerWithoutPhysics = this._updatePointerWithoutPhysics.bind(this);
-    this._onFocus();
     // If there are no compatibility issues, navigator.maxTouchPoints should be used here.
     this._pointerPool = new Array<Pointer>(11);
   }
@@ -63,7 +107,7 @@ export class PointerManager implements IInput {
   /**
    * @internal
    */
-  _update(frameCount: number): void {
+  _update(): void {
     const { _pointers: pointers, _nativeEvents: nativeEvents } = this;
     /** Clean up the pointer released in the previous frame. */
     let lastIndex = pointers.length - 1;
@@ -93,6 +137,7 @@ export class PointerManager implements IInput {
       const updatePointer = this._engine.physicsManager._initialized
         ? this._updatePointerWithPhysics
         : this._updatePointerWithoutPhysics;
+      const { frameCount } = this._engine.time;
       const { clientWidth, clientHeight } = this._htmlCanvas;
       const { width, height } = this._canvas;
       for (let i = lastIndex; i >= 0; i--) {
@@ -108,7 +153,7 @@ export class PointerManager implements IInput {
    * @internal
    */
   _onFocus(): void {
-    if (!this._hadListener) {
+    if (!this._hadListener && this._target) {
       const { _htmlCanvas: htmlCanvas, _onPointerEvent: onPointerEvent } = this;
       htmlCanvas.addEventListener("pointerdown", onPointerEvent);
       htmlCanvas.addEventListener("pointerup", onPointerEvent);
@@ -165,7 +210,6 @@ export class PointerManager implements IInput {
 
   private _onPointerEvent(evt: PointerEvent) {
     evt.cancelable && evt.preventDefault();
-    evt.type === "pointerdown" && this._htmlCanvas.focus();
     this._nativeEvents.push(evt);
   }
 
@@ -208,8 +252,8 @@ export class PointerManager implements IInput {
     }
   }
 
-  private _pointerRayCast(normalizedX: number, normalizedY: number): Entity {
-    const { _tempPoint: point, _tempRay: ray, _tempHitResult: hitResult } = PointerManager;
+  private _pointerRayCast(normalizedX: number, normalizedY: number, hitResult: HitResult): boolean {
+    const { _tempPoint: point, _tempRay: ray } = PointerManager;
     const { _activeCameras: cameras } = this._engine.sceneManager.activeScene;
     for (let i = cameras.length - 1; i >= 0; i--) {
       const camera = cameras[i];
@@ -219,20 +263,19 @@ export class PointerManager implements IInput {
       const { x: vpX, y: vpY, z: vpW, w: vpH } = camera.viewport;
       if (normalizedX >= vpX && normalizedY >= vpY && normalizedX - vpX <= vpW && normalizedY - vpY <= vpH) {
         point.set((normalizedX - vpX) / vpW, (normalizedY - vpY) / vpH);
-        if (
-          this._engine.physicsManager.raycast(
-            camera.viewportPointToRay(point, ray),
-            Number.MAX_VALUE,
-            camera.cullingMask,
-            hitResult
-          )
-        ) {
-          return hitResult.entity;
-        } else if (camera.clearFlags & CameraClearFlags.Color) {
-          return null;
-        }
+        return this._engine.physicsManager.raycast(
+          camera.viewportPointToRay(point, ray),
+          Number.MAX_VALUE,
+          camera.cullingMask,
+          hitResult
+        );
+      } else if (camera.clearFlags & CameraClearFlags.Color) {
+        hitResult.entity = null;
+        return false;
       }
     }
+    hitResult.entity = null;
+    return false;
   }
 
   private _updatePointerWithPhysics(
@@ -261,7 +304,7 @@ export class PointerManager implements IInput {
       }
       position.set(currX, currY);
       pointer._firePointerDrag();
-      const rayCastEntity = this._pointerRayCast(normalizedX, normalizedY);
+      this._pointerRayCast(normalizedX, normalizedY, pointer.hitResult);
       pointer._firePointerExitAndEnter(rayCastEntity);
       for (let i = 0; i < length; i++) {
         const event = events[i];
@@ -297,8 +340,10 @@ export class PointerManager implements IInput {
     } else {
       pointer.deltaPosition.set(0, 0);
       pointer.phase = PointerPhase.Stationary;
+      if (this._pointerRayCast(position.x / canvasW, position.y / canvasH, pointer.hitResult)) {
+      }
       pointer._firePointerDrag();
-      pointer._firePointerExitAndEnter(this._pointerRayCast(position.x / canvasW, position.y / canvasH));
+      pointer._firePointerExitAndEnter();
     }
   }
 
