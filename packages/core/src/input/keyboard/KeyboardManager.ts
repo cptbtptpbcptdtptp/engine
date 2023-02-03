@@ -8,6 +8,11 @@ import { IInput } from "../interface/IInput";
  * @internal
  */
 export class KeyboardManager implements IInput {
+  /** Whether to prevent events from triggering the default behavior. */
+  preventDefault: boolean = false;
+  /** Whether to prevent the propagation of events during capture and bubbling */
+  stopPropagation: boolean = false;
+
   /** @internal */
   _curHeldDownKeyToIndexMap: number[] = [];
   /** @internal */
@@ -25,8 +30,40 @@ export class KeyboardManager implements IInput {
   private _engine: Engine;
   private _htmlCanvas: HTMLCanvasElement;
   private _nativeEvents: KeyboardEvent[] = [];
+  private _target: EventTarget;
+  private _enable: boolean = true;
   private _focus: boolean = true;
   private _hadListener: boolean = false;
+
+  get target(): EventTarget {
+    return this._target;
+  }
+
+  set target(target: EventTarget) {
+    if (this._target !== target) {
+      this._target = target;
+      this._removeListener();
+      this._enable && this._focus && this._addListener();
+    }
+  }
+
+  /**
+   * If the input is enabled.
+   */
+  get enable(): boolean {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._focus !== value) {
+      this._focus = value;
+      if (value) {
+        this._focus && this._addListener();
+      } else {
+        this._removeListener();
+      }
+    }
+  }
 
   /**
    * If the input has focus.
@@ -38,7 +75,11 @@ export class KeyboardManager implements IInput {
   set focus(value: boolean) {
     if (this._focus !== value) {
       this._focus = value;
-      value ? this._addListener() : this._removeListener();
+      if (value) {
+        this._enable && this._addListener();
+      } else {
+        this._removeListener();
+      }
     }
   }
 
@@ -143,6 +184,8 @@ export class KeyboardManager implements IInput {
   }
 
   private _onKeyEvent(evt: KeyboardEvent): void {
+    this.preventDefault && evt.cancelable && evt.preventDefault();
+    this.stopPropagation && evt.stopPropagation();
     this._nativeEvents.push(evt);
   }
 }

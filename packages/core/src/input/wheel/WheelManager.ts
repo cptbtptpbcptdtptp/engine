@@ -7,13 +7,50 @@ import { IInput } from "../interface/IInput";
  * @internal
  */
 export class WheelManager implements IInput {
+  /** Whether to prevent events from triggering the default behavior. */
+  preventDefault: boolean = false;
+  /** Whether to prevent the propagation of events during capture and bubbling */
+  stopPropagation: boolean = false;
+
   /** @internal */
   _delta: Vector3 = new Vector3();
 
   private _nativeEvents: WheelEvent[] = [];
   private _canvas: HTMLCanvasElement;
+  private _enable: boolean = true;
+  private _target: EventTarget;
   private _focus: boolean = true;
   private _hadListener: boolean = false;
+
+  get target(): EventTarget {
+    return this._target;
+  }
+
+  set target(target: EventTarget) {
+    if (this._target !== target) {
+      this._target = target;
+      this._removeListener();
+      this._enable && this._focus && this._addListener();
+    }
+  }
+
+  /**
+   * If the input is enabled.
+   */
+  get enable(): boolean {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._focus !== value) {
+      this._focus = value;
+      if (value) {
+        this._focus && this._addListener();
+      } else {
+        this._removeListener();
+      }
+    }
+  }
 
   /**
    * If the input has focus.
@@ -25,7 +62,11 @@ export class WheelManager implements IInput {
   set focus(value: boolean) {
     if (this._focus !== value) {
       this._focus = value;
-      value ? this._addListener() : this._removeListener();
+      if (value) {
+        this._enable && this._addListener();
+      } else {
+        this._removeListener();
+      }
     }
   }
 
@@ -83,7 +124,8 @@ export class WheelManager implements IInput {
   }
 
   private _onWheelEvent(evt: WheelEvent): void {
-    evt.cancelable && evt.preventDefault();
+    this.preventDefault && evt.cancelable && evt.preventDefault();
+    this.stopPropagation && evt.stopPropagation();
     this._nativeEvents.push(evt);
   }
 }
