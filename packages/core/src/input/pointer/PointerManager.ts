@@ -19,7 +19,6 @@ import { KeyboardManager } from "../keyboard/KeyboardManager";
 export class PointerManager implements IInput {
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
-  private static _tempHitResult: HitResult = new HitResult();
 
   /** Whether to prevent events from triggering the default behavior. */
   preventDefault: boolean = true;
@@ -164,7 +163,7 @@ export class PointerManager implements IInput {
         const pointer = pointers[i];
         pointer._upList.length = pointer._downList.length = 0;
         updatePointer(frameCount, pointer, clientRect, clientWidth, clientHeight, width, height);
-        this._buttons |= pointer.pressedButtons;
+        this._buttons |= pointer._buttons;
       }
     }
   }
@@ -174,7 +173,11 @@ export class PointerManager implements IInput {
    */
   _destroy(): void {
     this._removeListener();
-    this._pointerPool.length = 0;
+    const pointerPool = this._pointerPool;
+    for (let i = 0, l = pointerPool.length; i < l; i++) {
+      pointerPool[i]?._destroy();
+    }
+    pointerPool.length = 0;
     this._htmlCanvas = null;
     this._engine = null;
   }
@@ -250,7 +253,7 @@ export class PointerManager implements IInput {
         }
         let pointer = pointerPool[i];
         if (!pointer) {
-          pointer = pointerPool[i] = new Pointer(i);
+          pointer = pointerPool[i] = new Pointer(this._engine, i);
         }
         pointer._uniqueID = pointerId;
         pointers.splice(i, 0, pointer);
@@ -261,8 +264,8 @@ export class PointerManager implements IInput {
     }
   }
 
-  private _pointerRayCast(normalizedX: number, normalizedY: number): Entity {
-    const { _tempPoint: point, _tempRay: ray, _tempHitResult: hitResult } = PointerManager;
+  private _pointerRayCast(normalizedX: number, normalizedY: number, hitResult: HitResult): Entity {
+    const { _tempPoint: point, _tempRay: ray } = PointerManager;
     const { _activeCameras: cameras } = this._engine.sceneManager.activeScene;
     for (let i = cameras.length - 1; i >= 0; i--) {
       const camera = cameras[i];
@@ -314,14 +317,14 @@ export class PointerManager implements IInput {
         pointer.phase = PointerPhase.Move;
       }
       position.set(currX, currY);
+      const rayCastEntity = this._pointerRayCast(normalizedX, normalizedY, pointer.currentHitResult);
       pointer._firePointerDrag();
-      const rayCastEntity = this._pointerRayCast(normalizedX, normalizedY);
       pointer._firePointerExitAndEnter(rayCastEntity);
       for (let i = 0; i < length; i++) {
         const event = events[i];
         const { button } = event;
         pointer.button = _pointerDec2BinMap[button] || PointerButton.None;
-        pointer.pressedButtons = event.buttons;
+        pointer._buttons = event.buttons;
         switch (event.type) {
           case "pointerdown":
             _downList.add(button);
@@ -351,8 +354,9 @@ export class PointerManager implements IInput {
     } else {
       pointer.deltaPosition.set(0, 0);
       pointer.phase = PointerPhase.Stationary;
+      const rayCastEntity = this._pointerRayCast(position.x / canvasW, position.y / canvasH, pointer.currentHitResult);
       pointer._firePointerDrag();
-      pointer._firePointerExitAndEnter(this._pointerRayCast(position.x / canvasW, position.y / canvasH));
+      pointer._firePointerExitAndEnter(rayCastEntity);
     }
   }
 
@@ -375,7 +379,7 @@ export class PointerManager implements IInput {
       pointer.deltaPosition.set(currX - position.x, currY - position.y);
       position.set(currX, currY);
       pointer.button = _pointerDec2BinMap[latestEvent.button] || PointerButton.None;
-      pointer.pressedButtons = latestEvent.buttons;
+      pointer._buttons = latestEvent.buttons;
       const { _upList, _upMap, _downList, _downMap } = this;
       for (let i = 0; i < length; i++) {
         const { button } = events[i];
