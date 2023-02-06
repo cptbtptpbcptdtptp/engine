@@ -16,12 +16,14 @@ export class WheelManager implements IInput {
   _delta: Vector3 = new Vector3();
 
   private _nativeEvents: WheelEvent[] = [];
-  private _canvas: HTMLCanvasElement;
   private _enable: boolean = true;
   private _target: EventTarget;
   private _focus: boolean = true;
   private _hadListener: boolean = false;
 
+  /**
+   * The listener element for this input.
+   */
   get target(): EventTarget {
     return this._target;
   }
@@ -75,7 +77,7 @@ export class WheelManager implements IInput {
    */
   constructor(engine: Engine) {
     // @ts-ignore
-    this._canvas = engine.canvas._webCanvas;
+    this._target = engine.canvas._webCanvas;
     this._onWheelEvent = this._onWheelEvent.bind(this);
     this._addListener();
   }
@@ -109,14 +111,14 @@ export class WheelManager implements IInput {
 
   private _addListener(): void {
     if (!this._hadListener) {
-      this._canvas.addEventListener("wheel", this._onWheelEvent);
+      this._target.addEventListener("wheel", this._onWheelEvent);
       this._hadListener = true;
     }
   }
 
   private _removeListener(): void {
     if (this._hadListener) {
-      this._canvas.removeEventListener("wheel", this._onWheelEvent);
+      this._target.removeEventListener("wheel", this._onWheelEvent);
       this._nativeEvents.length = 0;
       this._delta.set(0, 0, 0);
       this._hadListener = false;

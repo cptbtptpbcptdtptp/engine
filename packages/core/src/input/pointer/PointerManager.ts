@@ -9,6 +9,8 @@ import { PointerPhase } from "../enums/PointerPhase";
 import { PointerButton, _pointerBin2DecMap, _pointerDec2BinMap } from "../enums/PointerButton";
 import { IInput } from "../interface/IInput";
 import { Pointer } from "./Pointer";
+import { InputType } from "../enums/InputType";
+import { KeyboardManager } from "../keyboard/KeyboardManager";
 
 /**
  * Pointer Manager.
@@ -49,6 +51,9 @@ export class PointerManager implements IInput {
   private _focus: boolean = true;
   private _hadListener: boolean = false;
 
+  /**
+   * The listener element for this input.
+   */
   get target(): EventTarget {
     return this._target;
   }
@@ -106,14 +111,13 @@ export class PointerManager implements IInput {
     this._engine = engine;
     this._canvas = engine.canvas;
     // @ts-ignore
-    this._htmlCanvas = engine.canvas._webCanvas;
+    this._target = this._htmlCanvas = engine.canvas._webCanvas;
     this._htmlCanvas.oncontextmenu = (event: UIEvent) => {
       return false;
     };
     this._onPointerEvent = this._onPointerEvent.bind(this);
     this._updatePointerWithPhysics = this._updatePointerWithPhysics.bind(this);
     this._updatePointerWithoutPhysics = this._updatePointerWithoutPhysics.bind(this);
-    this._target = document;
     this._addListener();
     // If there are no compatibility issues, navigator.maxTouchPoints should be used here
     this._pointerPool = new Array<Pointer>(11);
@@ -179,10 +183,10 @@ export class PointerManager implements IInput {
     if (!this._hadListener) {
       const { _target: target, _onPointerEvent: onPointerEvent } = this;
       target.addEventListener("pointerdown", onPointerEvent);
-      target.addEventListener("pointerup", onPointerEvent);
       target.addEventListener("pointerout", onPointerEvent);
-      target.addEventListener("pointermove", onPointerEvent);
-      target.addEventListener("pointercancel", onPointerEvent);
+      document.addEventListener("pointermove", onPointerEvent);
+      window.addEventListener("pointerup", onPointerEvent);
+      window.addEventListener("pointercancel", onPointerEvent);
       this._hadListener = true;
     }
   }
@@ -191,10 +195,10 @@ export class PointerManager implements IInput {
     if (this._hadListener) {
       const { _target: target, _onPointerEvent: onPointerEvent } = this;
       target.removeEventListener("pointerdown", onPointerEvent);
-      target.removeEventListener("pointerup", onPointerEvent);
       target.removeEventListener("pointerout", onPointerEvent);
-      target.removeEventListener("pointermove", onPointerEvent);
-      target.removeEventListener("pointercancel", onPointerEvent);
+      document.removeEventListener("pointermove", onPointerEvent);
+      window.removeEventListener("pointerup", onPointerEvent);
+      window.removeEventListener("pointercancel", onPointerEvent);
       this._hadListener = false;
       this._downList.length = 0;
       this._upList.length = 0;
@@ -209,7 +213,13 @@ export class PointerManager implements IInput {
   private _onPointerEvent(evt: PointerEvent) {
     this.preventDefault && evt.cancelable && evt.preventDefault();
     this.stopPropagation && evt.stopPropagation();
+    evt.type === "pointerdown" && this._target === this._htmlCanvas && this._checkNeedFocus();
     this._nativeEvents.push(evt);
+  }
+
+  private _checkNeedFocus() {
+    const keyboardMgr = this._engine.inputManager.getInput<KeyboardManager>(InputType.Keyboard);
+    keyboardMgr && keyboardMgr.enable && keyboardMgr.target === this._htmlCanvas && this._htmlCanvas.focus();
   }
 
   private _getIndexByPointerID(pointerId: number): number {
