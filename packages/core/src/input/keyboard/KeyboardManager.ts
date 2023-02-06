@@ -8,6 +8,11 @@ import { IInput } from "../interface/IInput";
  * @internal
  */
 export class KeyboardManager implements IInput {
+  /** Whether to prevent events from triggering the default behavior. */
+  preventDefault: boolean = false;
+  /** Whether to prevent the propagation of events during capture and bubbling */
+  stopPropagation: boolean = false;
+
   /** @internal */
   _curHeldDownKeyToIndexMap: number[] = [];
   /** @internal */
@@ -23,10 +28,44 @@ export class KeyboardManager implements IInput {
   _curFrameUpList: DisorderedArray<Keys> = new DisorderedArray();
 
   private _engine: Engine;
-  private _htmlCanvas: HTMLCanvasElement;
   private _nativeEvents: KeyboardEvent[] = [];
+  private _target: EventTarget;
+  private _enable: boolean = true;
   private _focus: boolean = true;
   private _hadListener: boolean = false;
+
+  /**
+   * The listener element for this input.
+   */
+  get target(): EventTarget {
+    return this._target;
+  }
+
+  set target(target: EventTarget) {
+    if (this._target !== target) {
+      this._target = target;
+      this._removeListener();
+      this._enable && this._focus && this._addListener();
+    }
+  }
+
+  /**
+   * If the input is enabled.
+   */
+  get enable(): boolean {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._focus !== value) {
+      this._focus = value;
+      if (value) {
+        this._focus && this._addListener();
+      } else {
+        this._removeListener();
+      }
+    }
+  }
 
   /**
    * If the input has focus.
@@ -38,7 +77,11 @@ export class KeyboardManager implements IInput {
   set focus(value: boolean) {
     if (this._focus !== value) {
       this._focus = value;
-      value ? this._addListener() : this._removeListener();
+      if (value) {
+        this._enable && this._addListener();
+      } else {
+        this._removeListener();
+      }
     }
   }
 
@@ -47,9 +90,9 @@ export class KeyboardManager implements IInput {
    */
   constructor(engine: Engine) {
     // @ts-ignore
-    const htmlCanvas = engine._canvas._webCanvas;
+    const htmlCanvas = engine.canvas._webCanvas;
     this._engine = engine;
-    this._htmlCanvas = htmlCanvas;
+    this._target = htmlCanvas;
     // Need to set tabIndex to make the canvas focus.
     htmlCanvas.tabIndex = htmlCanvas.tabIndex;
     this._onKeyEvent = this._onKeyEvent.bind(this);
@@ -107,8 +150,8 @@ export class KeyboardManager implements IInput {
    */
   _destroy(): void {
     if (this._hadListener) {
-      this._htmlCanvas.removeEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.removeEventListener("keyup", this._onKeyEvent);
+      this._target.removeEventListener("keydown", this._onKeyEvent);
+      this._target.removeEventListener("keyup", this._onKeyEvent);
       this._hadListener = false;
     }
     this._curHeldDownKeyToIndexMap = null;
@@ -123,16 +166,16 @@ export class KeyboardManager implements IInput {
 
   private _addListener(): void {
     if (!this._hadListener) {
-      this._htmlCanvas.addEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.addEventListener("keyup", this._onKeyEvent);
+      this._target.addEventListener("keydown", this._onKeyEvent);
+      this._target.addEventListener("keyup", this._onKeyEvent);
       this._hadListener = true;
     }
   }
 
   private _removeListener(): void {
     if (this._hadListener) {
-      this._htmlCanvas.removeEventListener("keydown", this._onKeyEvent);
-      this._htmlCanvas.removeEventListener("keyup", this._onKeyEvent);
+      this._target.removeEventListener("keydown", this._onKeyEvent);
+      this._target.removeEventListener("keyup", this._onKeyEvent);
       this._curHeldDownKeyToIndexMap.length = 0;
       this._curFrameHeldDownList.length = 0;
       this._curFrameDownList.length = 0;
@@ -143,6 +186,8 @@ export class KeyboardManager implements IInput {
   }
 
   private _onKeyEvent(evt: KeyboardEvent): void {
+    this.preventDefault && evt.cancelable && evt.preventDefault();
+    this.stopPropagation && evt.stopPropagation();
     this._nativeEvents.push(evt);
   }
 }

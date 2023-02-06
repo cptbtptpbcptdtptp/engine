@@ -202,7 +202,8 @@ export class InputManager {
     }
     const { _inputInstances: inputInstances } = this;
     for (let i = 0, l = InputType.length; i < l; i++) {
-      inputInstances[i]?._update();
+      const input = inputInstances[i];
+      input && input.enable && input._update();
     }
   }
 

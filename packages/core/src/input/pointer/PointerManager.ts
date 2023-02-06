@@ -9,6 +9,8 @@ import { PointerPhase } from "../enums/PointerPhase";
 import { PointerButton, _pointerBin2DecMap, _pointerDec2BinMap } from "../enums/PointerButton";
 import { IInput } from "../interface/IInput";
 import { Pointer } from "./Pointer";
+import { InputType } from "../enums/InputType";
+import { KeyboardManager } from "../keyboard/KeyboardManager";
 
 /**
  * Pointer Manager.
@@ -18,6 +20,12 @@ export class PointerManager implements IInput {
   private static _tempRay: Ray = new Ray();
   private static _tempPoint: Vector2 = new Vector2();
   private static _tempHitResult: HitResult = new HitResult();
+
+  /** Whether to prevent events from triggering the default behavior. */
+  preventDefault: boolean = true;
+  /** Whether to prevent the propagation of events during capture and bubbling */
+  stopPropagation: boolean = false;
+
   /** @internal */
   _pointers: Pointer[] = [];
   /** @internal */
@@ -38,8 +46,43 @@ export class PointerManager implements IInput {
   private _htmlCanvas: HTMLCanvasElement;
   private _nativeEvents: PointerEvent[] = [];
   private _pointerPool: Pointer[];
+  private _target: EventTarget;
+  private _enable: boolean = true;
   private _focus: boolean = true;
   private _hadListener: boolean = false;
+
+  /**
+   * The listener element for this input.
+   */
+  get target(): EventTarget {
+    return this._target;
+  }
+
+  set target(target: EventTarget) {
+    if (this._target !== target) {
+      this._target = target;
+      this._removeListener();
+      this._enable && this._focus && this._addListener();
+    }
+  }
+
+  /**
+   * If the input is enabled.
+   */
+  get enable(): boolean {
+    return this._enable;
+  }
+
+  set enable(value: boolean) {
+    if (this._focus !== value) {
+      this._focus = value;
+      if (value) {
+        this._focus && this._addListener();
+      } else {
+        this._removeListener();
+      }
+    }
+  }
 
   /**
    * If the input has focus.
@@ -51,7 +94,11 @@ export class PointerManager implements IInput {
   set focus(value: boolean) {
     if (this._focus !== value) {
       this._focus = value;
-      value ? this._addListener() : this._removeListener();
+      if (value) {
+        this._enable && this._addListener();
+      } else {
+        this._removeListener();
+      }
     }
   }
 
@@ -64,7 +111,7 @@ export class PointerManager implements IInput {
     this._engine = engine;
     this._canvas = engine.canvas;
     // @ts-ignore
-    this._htmlCanvas = engine.canvas._webCanvas;
+    this._target = this._htmlCanvas = engine.canvas._webCanvas;
     this._htmlCanvas.oncontextmenu = (event: UIEvent) => {
       return false;
     };
@@ -134,24 +181,24 @@ export class PointerManager implements IInput {
 
   private _addListener(): void {
     if (!this._hadListener) {
-      const { _htmlCanvas: htmlCanvas, _onPointerEvent: onPointerEvent } = this;
-      htmlCanvas.addEventListener("pointerdown", onPointerEvent);
-      htmlCanvas.addEventListener("pointerup", onPointerEvent);
-      htmlCanvas.addEventListener("pointerout", onPointerEvent);
-      htmlCanvas.addEventListener("pointermove", onPointerEvent);
-      htmlCanvas.addEventListener("pointercancel", onPointerEvent);
+      const { _target: target, _onPointerEvent: onPointerEvent } = this;
+      target.addEventListener("pointerdown", onPointerEvent);
+      target.addEventListener("pointerout", onPointerEvent);
+      document.addEventListener("pointermove", onPointerEvent);
+      window.addEventListener("pointerup", onPointerEvent);
+      window.addEventListener("pointercancel", onPointerEvent);
       this._hadListener = true;
     }
   }
 
   private _removeListener(): void {
     if (this._hadListener) {
-      const { _htmlCanvas: htmlCanvas, _onPointerEvent: onPointerEvent } = this;
-      htmlCanvas.removeEventListener("pointerdown", onPointerEvent);
-      htmlCanvas.removeEventListener("pointerup", onPointerEvent);
-      htmlCanvas.removeEventListener("pointerout", onPointerEvent);
-      htmlCanvas.removeEventListener("pointermove", onPointerEvent);
-      htmlCanvas.removeEventListener("pointercancel", onPointerEvent);
+      const { _target: target, _onPointerEvent: onPointerEvent } = this;
+      target.removeEventListener("pointerdown", onPointerEvent);
+      target.removeEventListener("pointerout", onPointerEvent);
+      document.removeEventListener("pointermove", onPointerEvent);
+      window.removeEventListener("pointerup", onPointerEvent);
+      window.removeEventListener("pointercancel", onPointerEvent);
       this._hadListener = false;
       this._downList.length = 0;
       this._upList.length = 0;
@@ -164,9 +211,15 @@ export class PointerManager implements IInput {
   }
 
   private _onPointerEvent(evt: PointerEvent) {
-    evt.cancelable && evt.preventDefault();
-    evt.type === "pointerdown" && this._htmlCanvas.focus();
+    this.preventDefault && evt.cancelable && evt.preventDefault();
+    this.stopPropagation && evt.stopPropagation();
+    evt.type === "pointerdown" && this._target === this._htmlCanvas && this._checkNeedFocus();
     this._nativeEvents.push(evt);
+  }
+
+  private _checkNeedFocus() {
+    const keyboardMgr = this._engine.inputManager.getInput<KeyboardManager>(InputType.Keyboard);
+    keyboardMgr && keyboardMgr.enable && keyboardMgr.target === this._htmlCanvas && this._htmlCanvas.focus();
   }
 
   private _getIndexByPointerID(pointerId: number): number {
