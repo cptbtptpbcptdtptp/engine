@@ -28,7 +28,6 @@ export class KeyboardManager implements IInput {
   _curFrameUpList: DisorderedArray<Keys> = new DisorderedArray();
 
   private _engine: Engine;
-  private _htmlCanvas: HTMLCanvasElement;
   private _nativeEvents: KeyboardEvent[] = [];
   private _target: EventTarget;
   private _enable: boolean = true;
@@ -93,7 +92,7 @@ export class KeyboardManager implements IInput {
     // @ts-ignore
     const htmlCanvas = engine.canvas._webCanvas;
     this._engine = engine;
-    this._target = this._htmlCanvas = htmlCanvas;
+    this._target = htmlCanvas;
     // Need to set tabIndex to make the canvas focus.
     htmlCanvas.tabIndex = htmlCanvas.tabIndex;
     this._onKeyEvent = this._onKeyEvent.bind(this);
