@@ -1,7 +1,9 @@
 import { Vector2 } from "@oasis-engine/math";
 import { DisorderedArray } from "../../DisorderedArray";
+import { Engine } from "../../Engine";
 import { Entity } from "../../Entity";
-import { PointerButton } from "../enums/PointerButton";
+import { HitResult } from "../../physics";
+import { PointerButton, _pointerBin2DecMap } from "../enums/PointerButton";
 import { PointerPhase } from "../enums/PointerPhase";
 
 /**
@@ -17,16 +19,18 @@ export class Pointer {
   phase: PointerPhase = PointerPhase.Leave;
   /** The button that triggers the pointer event. */
   button: PointerButton;
-  /** The currently pressed buttons for this pointer. */
-  pressedButtons: PointerButton;
   /** The position of the pointer in screen space pixel coordinates. */
   position: Vector2 = new Vector2();
   /** The change of the pointer. */
   deltaPosition: Vector2 = new Vector2();
+  /** The currently hit result of the pointer. */
+  currentHitResult: HitResult = new HitResult();
   /** @internal */
   _events: PointerEvent[] = [];
   /** @internal */
   _uniqueID: number;
+  /** @internal */
+  _buttons: PointerButton = PointerButton.None;
   /** @internal */
   _upMap: number[] = [];
   /** @internal */
@@ -36,8 +40,48 @@ export class Pointer {
   /** @internal */
   _downList: DisorderedArray<PointerButton> = new DisorderedArray();
 
+  private _engine: Engine;
   private _currentPressedEntity: Entity;
   private _currentEnteredEntity: Entity;
+
+  /**
+   * Whether the pointer is being held down, if there is no parameter, return whether any pointer is being held down.
+   * @param pointerButton - The pointerButton on a pointer device
+   * @returns Whether the pointer is being held down
+   */
+  isPointerHeldDown(pointerButton?: PointerButton): boolean {
+    if (pointerButton === undefined) {
+      return this._buttons !== 0;
+    } else {
+      return (this._buttons & pointerButton) !== 0;
+    }
+  }
+
+  /**
+   * Whether the pointer starts to be pressed down during the current frame, if there is no parameter, return whether any pointer starts to be pressed down during the current frame.
+   * @param pointerButton - The pointerButton on a pointer device
+   * @returns Whether the pointer starts to be pressed down during the current frame
+   */
+  isPointerDown(pointerButton?: PointerButton): boolean {
+    if (pointerButton === undefined) {
+      return this._downList.length > 0;
+    } else {
+      return this._downMap[_pointerBin2DecMap[pointerButton]] === this._engine.time._frameCount;
+    }
+  }
+
+  /**
+   * Whether the pointer is released during the current frame, if there is no parameter, return whether any pointer released during the current frame.
+   * @param pointerButton - The pointerButtons on a mouse device
+   * @returns Whether the pointer is released during the current frame
+   */
+  isPointerUp(pointerButton?: PointerButton): boolean {
+    if (pointerButton === undefined) {
+      return this._upList.length > 0;
+    } else {
+      return this._upMap[_pointerBin2DecMap[pointerButton]] === this._engine.time._frameCount;
+    }
+  }
 
   /** @internal */
   _firePointerExitAndEnter(rayCastEntity: Entity): void {
@@ -100,10 +144,21 @@ export class Pointer {
     }
   }
 
+  /** @internal */
+  _destroy() {
+    this.position = this.deltaPosition = null;
+    this.currentHitResult = null;
+    this._currentPressedEntity = null;
+    this._currentPressedEntity = null;
+    this._downMap.length = this._upMap.length = 0;
+    this._downList.length = this._upList.length = 0;
+  }
+
   /**
    * @internal
    */
-  constructor(id: number) {
+  constructor(engine: Engine, id: number) {
+    this._engine = engine;
     this.id = id;
   }
 }
