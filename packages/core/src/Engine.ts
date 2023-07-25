@@ -38,6 +38,8 @@ import { CullMode } from "./shader/enums/CullMode";
 import { RenderQueueType } from "./shader/enums/RenderQueueType";
 import { RenderState } from "./shader/state/RenderState";
 import { Texture2D, Texture2DArray, TextureCube, TextureCubeFace, TextureFormat } from "./texture";
+import { XRManager } from "./xr/XRManager";
+import { XRProvider } from "./xr/abstract/XRProvider";
 
 ShaderPool.init();
 
@@ -54,6 +56,8 @@ export class Engine extends EventDispatcher {
 
   /** Input manager of Engine. */
   readonly inputManager: InputManager;
+  /** XR manager of Engine. */
+  readonly xrManager: XRManager;
 
   /** @internal */
   _physicsInitialized: boolean = false;
@@ -236,6 +240,9 @@ export class Engine extends EventDispatcher {
 
     this.inputManager = new InputManager(this);
 
+    const { xr } = configuration;
+    xr && (this.xrManager = new XRManager(this, xr));
+
     this._initMagentaTextures(hardwareRenderer);
 
     if (!hardwareRenderer.canIUse(GLCapabilityType.depthTexture)) {
@@ -330,6 +337,8 @@ export class Engine extends EventDispatcher {
         scene.physics._update(deltaTime);
       }
     }
+
+    this.xrManager._update();
 
     // Fire `onPointerXX`
     physicsInitialized && inputManager._firePointerScript(loopScenes);
@@ -662,6 +671,8 @@ export class Engine extends EventDispatcher {
 export interface EngineConfiguration {
   /** Physics. */
   physics?: IPhysics;
+  /** XR. */
+  xr?: new () => XRProvider;
   /** Color space. */
   colorSpace?: ColorSpace;
   /** Shader lab */
