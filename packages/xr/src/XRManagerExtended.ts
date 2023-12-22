@@ -57,10 +57,10 @@ export class XRManagerExtended extends XRManager {
    * @param args - The constructor params of the feature
    * @returns The feature which has been added
    */
-  override addFeature<T extends new (xrManager: XRManagerExtended, ...args: any[]) => XRFeature>(
-    type: T,
-    ...args: TFeatureConstructorArguments<T>
-  ): XRFeature | null {
+  override addFeature<T extends XRFeature, K extends new (xrManager: XRManagerExtended, ...args: any[]) => T>(
+    type: K,
+    ...args: TFeatureConstructorArguments<K>
+  ): T | null {
     if (this.sessionManager._platformSession) {
       throw new Error("Cannot add feature when the session is initialized.");
     }
@@ -69,7 +69,10 @@ export class XRManagerExtended extends XRManager {
       const feature = features[i];
       if (feature instanceof type) throw new Error("The feature has been added");
     }
-    const feature = new type(this, ...args);
+    if (!this.isSupportedFeature(type)) {
+      throw new Error(XRFeatureType[XRManagerExtended._featureMap.get(type)] + " feature is not supported");
+    }
+    const feature = new type(this, ...args) as T;
     this._features.push(feature);
     return feature;
   }
@@ -311,10 +314,10 @@ declare module "@galacean/engine" {
      * @param args - The constructor params of the feature
      * @returns The feature which has been added
      */
-    addFeature<T extends new (xrManager: XRManagerExtended, ...args: any[]) => XRFeature>(
-      type: T,
-      ...args: TFeatureConstructorArguments<T>
-    ): XRFeature | null;
+    addFeature<T extends XRFeature, K extends new (xrManager: XRManagerExtended, ...args: any[]) => T>(
+      type: K,
+      ...args: TFeatureConstructorArguments<K>
+    ): T | null;
 
     /**
      * Get feature which match the type.
