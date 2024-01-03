@@ -42,5 +42,6 @@ export interface AtlasSprite {
   region: { x: number; y: number; w: number; h: number };
   pivot: { x: number; y: number };
   border: { x: number; y: number; z: number; w: number };
-  pixelsPerUnit: number;
+  width: number;
+  height: number;
 }
