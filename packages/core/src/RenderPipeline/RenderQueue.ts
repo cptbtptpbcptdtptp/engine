@@ -90,16 +90,14 @@ export class RenderQueue {
 
     for (let i = 0; i < len; i++) {
       const element = batchedElements[i];
-      const { data, shaderPasses } = element;
+      const { data, shaderPasses} = element;
 
-      const { usage } = data;
+      const { usage, primitive, material } = data;
       const needMask = usage === RenderDataUsage.Sprite || usage === RenderDataUsage.Text;
       const renderer = data.component;
       needMask && spriteMaskManager.preRender(camera, <SpriteRenderer>renderer);
 
       const compileMacros = Shader._compileMacros;
-      const primitive = data.primitive;
-      const material = data.material;
       const { shaderData: rendererData, instanceId: rendererId } = renderer;
       const { shaderData: materialData, instanceId: materialId, renderStates } = material;
 

@@ -1,6 +1,8 @@
-import { BoundingBox, Matrix } from "@galacean/engine-math";
+import { BoundingBox, Color, Matrix, Vector2 } from "@galacean/engine-math";
+import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
-import { SpriteMask } from "../sprite";
+import { UIRenderer } from "../../ui";
+import { Sprite, SpriteMask } from "../sprite";
 import { SpriteRenderer } from "../sprite/SpriteRenderer";
 import { IAssembler } from "./IAssembler";
 
@@ -12,11 +14,11 @@ export class SimpleSpriteAssembler {
   static _rectangleTriangles: number[] = [0, 1, 2, 2, 1, 3];
   static _worldMatrix: Matrix = new Matrix();
 
-  static resetData(renderer: SpriteRenderer | SpriteMask): void {
+  static resetData(renderer: UIRenderer | SpriteRenderer | SpriteMask): void {
     const batcher =
-      renderer instanceof SpriteRenderer
-        ? renderer.engine._batcherManager._batcher2D
-        : renderer.engine._spriteMaskManager._batcher;
+      renderer instanceof SpriteMask
+        ? renderer.engine._spriteMaskManager._batcher
+        : renderer.engine._batcherManager._batcher2D;
     if (renderer._chunk) {
       batcher.freeChunk(renderer._chunk);
       renderer._chunk = batcher.allocateChunk(4);
@@ -26,16 +28,25 @@ export class SimpleSpriteAssembler {
     renderer._chunk._indices = this._rectangleTriangles;
   }
 
-  static updatePositions(renderer: SpriteRenderer | SpriteMask): void {
-    const { width, height, sprite } = renderer;
-    const { x: pivotX, y: pivotY } = sprite.pivot;
+  static updatePositions(
+    sprite: Sprite,
+    width: number,
+    height: number,
+    pivot: Vector2,
+    matrix: Matrix,
+    chunk: MBChunk,
+    bounds: BoundingBox,
+    flipX?: boolean,
+    flipY?: boolean
+  ): void {
+    const { x: pivotX, y: pivotY } = pivot;
     // Renderer's worldMatrix;
     const { _worldMatrix: worldMatrix } = this;
     const { elements: wE } = worldMatrix;
     // Parent's worldMatrix.
-    const { elements: pWE } = renderer.entity.transform.worldMatrix;
-    const sx = renderer.flipX ? -width : width;
-    const sy = renderer.flipY ? -height : height;
+    const { elements: pWE } = matrix;
+    const sx = flipX ? -width : width;
+    const sy = flipY ? -height : height;
     (wE[0] = pWE[0] * sx), (wE[1] = pWE[1] * sx), (wE[2] = pWE[2] * sx);
     (wE[4] = pWE[4] * sy), (wE[5] = pWE[5] * sy), (wE[6] = pWE[6] * sy);
     (wE[8] = pWE[8]), (wE[9] = pWE[9]), (wE[10] = pWE[10]);
@@ -50,7 +61,6 @@ export class SimpleSpriteAssembler {
     // ---------------
     // Update positions.
     const spritePositions = sprite._getPositions();
-    const { _chunk: chunk } = renderer;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start;
     for (let i = 0; i < 4; ++i) {
@@ -60,15 +70,13 @@ export class SimpleSpriteAssembler {
       vertices[index + 2] = wE[2] * x + wE[6] * y + wE[14];
       index += 9;
     }
-
-    BoundingBox.transform(sprite._getBounds(), worldMatrix, renderer._bounds);
+    BoundingBox.transform(sprite._getBounds(), worldMatrix, bounds);
   }
 
-  static updateUVs(renderer: SpriteRenderer | SpriteMask): void {
-    const spriteUVs = renderer.sprite._getUVs();
+  static updateUVs(sprite: Sprite, chunk: MBChunk) {
+    const spriteUVs = sprite._getUVs();
     const { x: left, y: bottom } = spriteUVs[0];
     const { x: right, y: top } = spriteUVs[3];
-    const { _chunk: chunk } = renderer;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start + 3;
     vertices[index] = left;
@@ -84,9 +92,8 @@ export class SimpleSpriteAssembler {
     vertices[index + 1] = top;
   }
 
-  static updateColor(renderer: SpriteRenderer): void {
-    const { _chunk: chunk } = renderer;
-    const { r, g, b, a } = renderer.color;
+  static updateColor(chunk: MBChunk, color: Color): void {
+    const { r, g, b, a } = color;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start + 5;
     for (let i = 0; i < 4; ++i) {

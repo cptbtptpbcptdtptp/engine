@@ -30,6 +30,7 @@ export class SpriteRenderData extends RenderData implements IPoolElement {
   }
 
   override dispose(): void {
-    this.component = this.material = this.texture = this.chunk = null;
+    this.drawInfo.length = 0;
+    this.component = this.texture = this.chunk = null;
   }
 }

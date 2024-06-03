@@ -1,4 +1,6 @@
 import { PipelineStage } from "../RenderPipeline/enums/PipelineStage";
+import uiDefaultFs from "../shaderlib.extra/uiDefault.fs.glsl";
+import uiDefaultVs from "../shaderlib.extra/uiDefault.vs.glsl";
 import blitFs from "../shaderlib/extra/Blit.fs.glsl";
 import blitVs from "../shaderlib/extra/Blit.vs.glsl";
 import skyProceduralFs from "../shaderlib/extra/SkyProcedural.fs.glsl";
@@ -60,6 +62,7 @@ export class ShaderPool {
     Shader.create("particle-shader", [new ShaderPass("Forward", particleVs, particleFs, forwardPassTags)]);
     Shader.create("SpriteMask", [new ShaderPass("Forward", spriteMaskVs, spriteMaskFs, forwardPassTags)]);
     Shader.create("Sprite", [new ShaderPass("Forward", spriteVs, spriteFs, forwardPassTags)]);
+    Shader.create("ui", [new ShaderPass("Forward", uiDefaultVs, uiDefaultFs, forwardPassTags)]);
     Shader.create("background-texture", [
       new ShaderPass("Forward", backgroundTextureVs, backgroundTextureFs, forwardPassTags)
     ]);

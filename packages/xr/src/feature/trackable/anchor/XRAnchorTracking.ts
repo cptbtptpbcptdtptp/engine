@@ -82,6 +82,6 @@ export class XRAnchorTracking extends XRTrackableFeature<XRAnchor, XRRequestAnch
   protected override _generateTracked(): XRAnchor {
     const anchor = new XRAnchor();
     anchor.id = XRTrackableFeature._uuid++;
-    return anchor;
+    return anchor;  
   }
 }

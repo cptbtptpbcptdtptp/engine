@@ -1,5 +1,8 @@
-import { Matrix, Vector2, Vector3 } from "@galacean/engine-math";
+import { BoundingBox, Color, Matrix, Vector2 } from "@galacean/engine-math";
+import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
+import { UIRenderer } from "../../ui";
+import { Sprite } from "../sprite";
 import { SpriteRenderer } from "../sprite/SpriteRenderer";
 import { IAssembler } from "./IAssembler";
 
@@ -14,7 +17,7 @@ export class SlicedSpriteAssembler {
   ];
   static _worldMatrix: Matrix = new Matrix();
 
-  static resetData(renderer: SpriteRenderer): void {
+  static resetData(renderer: SpriteRenderer | UIRenderer): void {
     const batcher = renderer.engine._batcherManager._batcher2D;
     if (renderer._chunk) {
       batcher.freeChunk(renderer._chunk);
@@ -25,8 +28,17 @@ export class SlicedSpriteAssembler {
     renderer._chunk._indices = this._rectangleTriangles;
   }
 
-  static updatePositions(renderer: SpriteRenderer): void {
-    const { width, height, sprite } = renderer;
+  static updatePositions(
+    sprite: Sprite,
+    width: number,
+    height: number,
+    pivot: Vector2,
+    matrix: Matrix,
+    chunk: MBChunk,
+    bounds: BoundingBox,
+    flipX?: boolean,
+    flipY?: boolean
+  ): void {
     const { border } = sprite;
     // Update local positions.
     const spritePositions = sprite._getPositions();
@@ -75,16 +87,16 @@ export class SlicedSpriteAssembler {
     }
 
     // Update renderer's worldMatrix.
-    const { x: pivotX, y: pivotY } = renderer.sprite.pivot;
-    const localTransX = renderer.width * pivotX;
-    const localTransY = renderer.height * pivotY;
+    const { x: pivotX, y: pivotY } = pivot;
+    const localTransX = width * pivotX;
+    const localTransY = height * pivotY;
     // Renderer's worldMatrix.
     const { _worldMatrix: worldMatrix } = this;
     const { elements: wE } = worldMatrix;
     // Parent's worldMatrix.
-    const { elements: pWE } = renderer.entity.transform.worldMatrix;
-    const sx = renderer.flipX ? -1 : 1;
-    const sy = renderer.flipY ? -1 : 1;
+    const { elements: pWE } = matrix;
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
     (wE[0] = pWE[0] * sx), (wE[1] = pWE[1] * sx), (wE[2] = pWE[2] * sx);
     (wE[4] = pWE[4] * sy), (wE[5] = pWE[5] * sy), (wE[6] = pWE[6] * sy);
     (wE[8] = pWE[8]), (wE[9] = pWE[9]), (wE[10] = pWE[10]);
@@ -102,7 +114,6 @@ export class SlicedSpriteAssembler {
     //  0 - 4 - 8  - 12
     // ------------------------
     // Assemble position and uv.
-    const { _chunk: chunk } = renderer;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start;
     for (let i = 0; i < 4; i++) {
@@ -116,16 +127,15 @@ export class SlicedSpriteAssembler {
       }
     }
 
-    const { min, max } = renderer._bounds;
+    const { min, max } = bounds;
     min.set(row[0], column[0], 0);
     max.set(row[3], column[3], 0);
-    renderer._bounds.transform(worldMatrix);
+    bounds.transform(worldMatrix);
   }
 
-  static updateUVs(renderer: SpriteRenderer): void {
-    const { _chunk: chunk } = renderer;
+  static updateUVs(sprite: Sprite, chunk: MBChunk): void {
     const vertices = chunk._meshBuffer._vertices;
-    const spriteUVs = renderer.sprite._getUVs();
+    const spriteUVs = sprite._getUVs();
     let index = chunk._vEntry.start + 3;
     for (let i = 0; i < 4; i++) {
       const rowU = spriteUVs[i].x;
@@ -137,9 +147,8 @@ export class SlicedSpriteAssembler {
     }
   }
 
-  static updateColor(renderer: SpriteRenderer): void {
-    const { _chunk: chunk } = renderer;
-    const { r, g, b, a } = renderer.color;
+  static updateColor(chunk: MBChunk, color: Color): void {
+    const { r, g, b, a } = color;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start + 5;
     for (let i = 0; i < 16; ++i) {

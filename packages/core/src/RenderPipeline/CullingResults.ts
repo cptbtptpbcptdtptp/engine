@@ -37,7 +37,7 @@ export class CullingResults {
 
   destroy(): void {
     this.opaqueQueue.destroy();
-    this.transparentQueue.destroy();
     this.alphaTestQueue.destroy();
+    this.transparentQueue.destroy();
   }
 }

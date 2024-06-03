@@ -311,6 +311,13 @@ export class Renderer extends Component implements IComponentCustomClone {
   /**
    * @internal
    */
+  _validityCheck(): boolean {
+    return true;
+  }
+
+  /**
+   * @internal
+   */
   _prepareRender(context: RenderContext): void {
     const virtualCamera = context.virtualCamera;
     const cameraPosition = virtualCamera.position;

@@ -307,8 +307,19 @@ export class SpriteRenderer extends Renderer {
    * @internal
    */
   protected override _updateBounds(worldBounds: BoundingBox): void {
-    if (this.sprite) {
-      this._assembler.updatePositions(this);
+    const { _sprite: sprite } = this;
+    if (sprite) {
+      this._assembler.updatePositions(
+        sprite,
+        this.width,
+        this.height,
+        sprite.pivot,
+        this.entity.transform.worldMatrix,
+        this._chunk,
+        this._bounds,
+        this._flipX,
+        this._flipY
+      );
     } else {
       worldBounds.min.set(0, 0, 0);
       worldBounds.max.set(0, 0, 0);
@@ -319,7 +330,8 @@ export class SpriteRenderer extends Renderer {
    * @internal
    */
   protected override _render(context: RenderContext): void {
-    if (!this.sprite?.texture || !this.width || !this.height) {
+    const { sprite, width, height, _chunk: chunk } = this;
+    if (!sprite?.texture || !width || !height) {
       return;
     }
 
@@ -334,26 +346,35 @@ export class SpriteRenderer extends Renderer {
 
     // Update position
     if (this._dirtyUpdateFlag & RendererUpdateFlags.WorldVolume) {
-      this._assembler.updatePositions(this);
+      this._assembler.updatePositions(
+        sprite,
+        width,
+        height,
+        sprite.pivot,
+        this.entity.transform.worldMatrix,
+        this._chunk,
+        this._bounds,
+        this._flipX,
+        this._flipY
+      );
       this._dirtyUpdateFlag &= ~RendererUpdateFlags.WorldVolume;
     }
 
     // Update uv
     if (this._dirtyUpdateFlag & SpriteRendererUpdateFlags.UV) {
-      this._assembler.updateUVs(this);
+      this._assembler.updateUVs(sprite, chunk);
       this._dirtyUpdateFlag &= ~SpriteRendererUpdateFlags.UV;
     }
 
     // Update color
     if (this._dirtyUpdateFlag & SpriteRendererUpdateFlags.Color) {
-      this._assembler.updateColor(this);
+      this._assembler.updateColor(chunk, this.color);
       this._dirtyUpdateFlag &= ~SpriteRendererUpdateFlags.Color;
     }
 
     // Push primitive
     const { engine } = context.camera;
     const renderData = engine._spriteRenderDataPool.getFromPool();
-    const { _chunk: chunk } = this;
     renderData.set(this, material, chunk._meshBuffer._mesh._primitive, chunk._subMesh, this.sprite.texture, chunk);
     renderData.usage = RenderDataUsage.Sprite;
     engine._batcherManager.commitRenderData(context, renderData);
@@ -412,6 +433,16 @@ export class SpriteRenderer extends Renderer {
           to === SpriteMaskInteraction.VisibleInsideMask ? CompareFunction.LessEqual : CompareFunction.Greater;
       }
     }
+  }
+
+  override _onEnableInScene(): void {
+    super._onEnableInScene();
+    this._sprite?._updateFlagManager.removeListener(this._onSpriteChange);
+  }
+
+  override _onDisableInScene(): void {
+    super._onDisableInScene();
+    this._sprite?._updateFlagManager.addListener(this._onSpriteChange);
   }
 
   @ignoreClone

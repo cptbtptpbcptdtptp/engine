@@ -7,6 +7,7 @@ import { ignoreClone } from "../clone/CloneManager";
 import { Mesh, MeshModifyFlags } from "../graphic/Mesh";
 import { ShaderMacro } from "../shader/ShaderMacro";
 import { RenderDataUsage } from "../RenderPipeline/enums/RenderDataUsage";
+import { RenderData } from "../RenderPipeline/RenderData";
 
 /**
  * MeshRenderer Component.

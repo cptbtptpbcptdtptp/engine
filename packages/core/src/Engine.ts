@@ -100,6 +100,8 @@ export class Engine extends EventDispatcher {
   /* @internal */
   _spriteMaskDefaultMaterial: Material;
   /* @internal */
+  _uiDefaultMaterial: Material;
+  /* @internal */
   _textDefaultFont: Font;
   /* @internal */
   _renderContext: RenderContext = new RenderContext();
@@ -263,6 +265,8 @@ export class Engine extends EventDispatcher {
     this._spriteMaskDefaultMaterial = this._createSpriteMaskMaterial();
     this._textDefaultFont = Font.createFromOS(this, "Arial");
     this._textDefaultFont.isGCIgnored = true;
+
+    this._uiDefaultMaterial = this._createUIMaterial();
 
     this.inputManager = new InputManager(this);
     this._batcherManager = new BatcherManager(this);
@@ -716,6 +720,23 @@ export class Engine extends EventDispatcher {
     renderState.rasterState.cullMode = CullMode.Off;
     renderState.stencilState.enabled = true;
     renderState.depthState.enabled = false;
+    material.isGCIgnored = true;
+    return material;
+  }
+
+  private _createUIMaterial(): Material {
+    const material = new Material(this, Shader.find("ui"));
+    const renderState = material.renderState;
+    const target = renderState.blendState.targetBlendState;
+    target.enabled = true;
+    target.sourceColorBlendFactor = BlendFactor.SourceAlpha;
+    target.destinationColorBlendFactor = BlendFactor.OneMinusSourceAlpha;
+    target.sourceAlphaBlendFactor = BlendFactor.One;
+    target.destinationAlphaBlendFactor = BlendFactor.OneMinusSourceAlpha;
+    target.colorBlendOperation = target.alphaBlendOperation = BlendOperation.Add;
+    renderState.depthState.writeEnabled = false;
+    renderState.rasterState.cullMode = CullMode.Off;
+    renderState.renderQueueType = RenderQueueType.Transparent;
     material.isGCIgnored = true;
     return material;
   }

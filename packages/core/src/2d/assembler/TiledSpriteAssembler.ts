@@ -1,12 +1,13 @@
-import { MathUtil, Matrix } from "@galacean/engine-math";
-import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
+import { BoundingBox, Color, MathUtil, Matrix, Vector2 } from "@galacean/engine-math";
 import { DisorderedArray } from "../../DisorderedArray";
-import { SpriteTileMode } from "../enums/SpriteTileMode";
+import { Batcher2D } from "../../RenderPipeline/batcher/Batcher2D";
+import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
+import { Logger } from "../../base";
+import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
+import { UIRenderer } from "../../ui";
 import { Sprite } from "../sprite";
 import { SpriteRenderer } from "../sprite/SpriteRenderer";
 import { IAssembler } from "./IAssembler";
-import { Logger } from "../../base";
-import { Batcher2D } from "../../RenderPipeline/batcher/Batcher2D";
 
 /**
  * @internal
@@ -19,7 +20,7 @@ export class TiledSpriteAssembler {
   static _uvRow: DisorderedArray<number> = new DisorderedArray<number>();
   static _uvColumn: DisorderedArray<number> = new DisorderedArray<number>();
 
-  static resetData(renderer: SpriteRenderer, vCount: number, iCount: number): void {
+  static resetData(renderer: SpriteRenderer | UIRenderer, vCount: number, iCount: number): void {
     if (vCount && iCount) {
       const batcher = renderer.engine._batcherManager._batcher2D;
       const { _chunk: chunk } = renderer;
@@ -36,159 +37,22 @@ export class TiledSpriteAssembler {
     }
   }
 
-  static updatePositions(renderer: SpriteRenderer): void {
-    const { width, height, sprite, tileMode, tiledAdaptiveThreshold: threshold } = renderer;
-    // Calculate row and column
-    const { _posRow: posRow, _posColumn: posColumn, _uvRow: uvRow, _uvColumn: uvColumn } = this;
-    posRow.length = posColumn.length = uvRow.length = uvColumn.length = 0;
-    tileMode === SpriteTileMode.Adaptive
-      ? this._calculateAdaptiveDividing(sprite, width, height, threshold, posRow, posColumn, uvRow, uvColumn)
-      : this._calculateContinuousDividing(sprite, width, height, posRow, posColumn, uvRow, uvColumn);
-    // Update renderer's worldMatrix
-    const { x: pivotX, y: pivotY } = renderer.sprite.pivot;
-    const localTransX = renderer.width * pivotX;
-    const localTransY = renderer.height * pivotY;
-    // Renderer's worldMatrix
-    const { _worldMatrix: worldMatrix } = TiledSpriteAssembler;
-    const { elements: wE } = worldMatrix;
-    // Parent's worldMatrix
-    const { elements: pWE } = renderer.entity.transform.worldMatrix;
-    const sx = renderer.flipX ? -1 : 1;
-    const sy = renderer.flipY ? -1 : 1;
-    let wE0: number, wE1: number, wE2: number;
-    let wE4: number, wE5: number, wE6: number;
-    (wE0 = wE[0] = pWE[0] * sx), (wE1 = wE[1] = pWE[1] * sx), (wE2 = wE[2] = pWE[2] * sx);
-    (wE4 = wE[4] = pWE[4] * sy), (wE5 = wE[5] = pWE[5] * sy), (wE6 = wE[6] = pWE[6] * sy);
-    (wE[8] = pWE[8]), (wE[9] = pWE[9]), (wE[10] = pWE[10]);
-    const wE12 = (wE[12] = pWE[12] - localTransX * wE[0] - localTransY * wE[4]);
-    const wE13 = (wE[13] = pWE[13] - localTransX * wE[1] - localTransY * wE[5]);
-    const wE14 = (wE[14] = pWE[14] - localTransX * wE[2] - localTransY * wE[6]);
-    // Assemble position and uv
-    const rowLength = posRow.length - 1;
-    const columnLength = posColumn.length - 1;
-
-    // Calculate total vertex count and indices count, to be optimized.
-    let vertexCount = 0;
-    let indicesCount = 0;
-    for (let j = 0; j < columnLength; j++) {
-      const doubleJ = 2 * j;
-      for (let i = 0; i < rowLength; i++) {
-        const uvL = uvRow.get(2 * i);
-        const uvR = uvRow.get(2 * i + 1);
-        const uvT = uvColumn.get(doubleJ + 1);
-        if (isNaN(uvL) || isNaN(uvL) || isNaN(uvR) || isNaN(uvT)) {
-          continue;
-        }
-        vertexCount += 4;
-        indicesCount += 6;
-      }
-    }
-    this.resetData(renderer, vertexCount, indicesCount);
-
-    const { _chunk: chunk } = renderer;
-    const vertices = chunk._meshBuffer._vertices;
-    const indices = chunk._indices;
-    let index = chunk._vEntry.start;
-    let count = 0;
-    let trianglesOffset = 0;
-    for (let j = 0; j < columnLength; j++) {
-      const doubleJ = 2 * j;
-      for (let i = 0; i < rowLength; i++) {
-        const uvL = uvRow.get(2 * i);
-        const uvR = uvRow.get(2 * i + 1);
-        const uvT = uvColumn.get(doubleJ + 1);
-        if (isNaN(uvL) || isNaN(uvL) || isNaN(uvR) || isNaN(uvT)) {
-          continue;
-        }
-
-        indices[trianglesOffset++] = count;
-        indices[trianglesOffset++] = count + 1;
-        indices[trianglesOffset++] = count + 2;
-        indices[trianglesOffset++] = count + 2;
-        indices[trianglesOffset++] = count + 1;
-        indices[trianglesOffset++] = count + 3;
-        count += 4;
-        const l = posRow.get(i);
-        const b = posColumn.get(j);
-        const r = posRow.get(i + 1);
-        const t = posColumn.get(j + 1);
-
-        // left and bottom
-        vertices[index] = wE0 * l + wE4 * b + wE12;
-        vertices[index + 1] = wE1 * l + wE5 * b + wE13;
-        vertices[index + 2] = wE2 * l + wE6 * b + wE14;
-        index += 9;
-
-        // right and bottom
-        vertices[index] = wE0 * r + wE4 * b + wE12;
-        vertices[index + 1] = wE1 * r + wE5 * b + wE13;
-        vertices[index + 2] = wE2 * r + wE6 * b + wE14;
-        index += 9;
-
-        // left and top
-        vertices[index] = wE0 * l + wE4 * t + wE12;
-        vertices[index + 1] = wE1 * l + wE5 * t + wE13;
-        vertices[index + 2] = wE2 * l + wE6 * t + wE14;
-        index += 9;
-
-        // right and top
-        vertices[index] = wE0 * r + wE4 * t + wE12;
-        vertices[index + 1] = wE1 * r + wE5 * t + wE13;
-        vertices[index + 2] = wE2 * r + wE6 * t + wE14;
-        index += 9;
-      }
-    }
-
-    const { min, max } = renderer._bounds;
-    min.set(posRow.get(0), posColumn.get(0), 0);
-    max.set(posRow.get(rowLength), posColumn.get(columnLength), 0);
-    renderer._bounds.transform(worldMatrix);
+  static updatePositions(
+    sprite: Sprite,
+    width: number,
+    height: number,
+    pivot: Vector2,
+    matrix: Matrix,
+    chunk: MBChunk,
+    bounds: BoundingBox,
+    flipX?: boolean,
+    flipY?: boolean
+  ): void {
+    return;
   }
 
-  static updateUVs(renderer: SpriteRenderer): void {
-    const { _posRow: posRow, _posColumn: posColumn, _uvRow: uvRow, _uvColumn: uvColumn } = this;
-    const rowLength = posRow.length - 1;
-    const columnLength = posColumn.length - 1;
-    const { _chunk: chunk } = renderer;
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start + 3;
-    for (let j = 0; j < columnLength; j++) {
-      const doubleJ = 2 * j;
-      for (let i = 0; i < rowLength; i++) {
-        const uvL = uvRow.get(2 * i);
-        const uvB = uvColumn.get(doubleJ);
-        const uvR = uvRow.get(2 * i + 1);
-        const uvT = uvColumn.get(doubleJ + 1);
-        if (isNaN(uvL) || isNaN(uvL) || isNaN(uvR) || isNaN(uvT)) {
-          continue;
-        }
-
-        // left and bottom
-        vertices[index] = uvL;
-        vertices[index + 1] = uvB;
-        index += 9;
-
-        // right and bottom
-        vertices[index] = uvR;
-        vertices[index + 1] = uvB;
-        index += 9;
-
-        // left and top
-        vertices[index] = uvL;
-        vertices[index + 1] = uvT;
-        index += 9;
-
-        // right and top
-        vertices[index] = uvR;
-        vertices[index + 1] = uvT;
-        index += 9;
-      }
-    }
-  }
-
-  static updateColor(renderer: SpriteRenderer): void {
-    const { _chunk: chunk } = renderer;
-    const { r, g, b, a } = renderer.color;
+  static updateColor(chunk: MBChunk, color: Color): void {
+    const { r, g, b, a } = color;
     const vertices = chunk._meshBuffer._vertices;
     let index = chunk._vEntry.start + 5;
     for (let i = 0, l = chunk._vEntry.len / 9; i < l; ++i) {
