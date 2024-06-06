@@ -1,16 +1,19 @@
 import { Color, MathUtil } from "@galacean/engine-math";
 import { Sprite, SpriteDrawMode, SpriteRenderer, SpriteTileMode } from "../2d";
-import { UIRenderer } from "./UIRenderer";
-import { assignmentClone, deepClone, ignoreClone } from "../clone/CloneManager";
-import { ShaderProperty } from "../shader";
 import { IAssembler } from "../2d/assembler/IAssembler";
-import { Entity } from "../Entity";
 import { SimpleSpriteAssembler } from "../2d/assembler/SimpleSpriteAssembler";
 import { SlicedSpriteAssembler } from "../2d/assembler/SlicedSpriteAssembler";
 import { TiledSpriteAssembler } from "../2d/assembler/TiledSpriteAssembler";
 import { SpriteModifyFlags } from "../2d/enums/SpriteModifyFlags";
-import { RendererUpdateFlags } from "../Renderer";
+import { Entity } from "../Entity";
 import { RenderContext } from "../RenderPipeline/RenderContext";
+import { RenderDataUsage } from "../RenderPipeline/enums/RenderDataUsage";
+import { RendererUpdateFlags } from "../Renderer";
+import { assignmentClone, deepClone, ignoreClone } from "../clone/CloneManager";
+import { MeshTopology, Primitive, SubMesh, VertexElement, VertexElementFormat } from "../graphic";
+import { VertexAttribute } from "../mesh";
+import { ShaderProperty } from "../shader";
+import { UIRenderer } from "./UIRenderer";
 
 export class Image extends UIRenderer {
   /** @internal */
@@ -27,6 +30,13 @@ export class Image extends UIRenderer {
   private _tileMode: SpriteTileMode = SpriteTileMode.Continuous;
   @assignmentClone
   private _tiledAdaptiveThreshold: number = 0.5;
+
+  /** @internal */
+  @ignoreClone
+  _primitive: Primitive;
+  /** @internal */
+  @ignoreClone
+  _subPrimitive: SubMesh = new SubMesh(0, 0, MeshTopology.Triangles);
 
   /**
    * The draw mode of the sprite renderer.
@@ -51,7 +61,7 @@ export class Image extends UIRenderer {
         default:
           break;
       }
-      this._assembler.resetData(this);
+      this._assembler.resetData(this._primitive, this._subPrimitive);
       this._dirtyUpdateFlag |= ImageUpdateFlags.VertexData;
     }
   }
@@ -121,6 +131,10 @@ export class Image extends UIRenderer {
   constructor(entity: Entity) {
     super(entity);
     this.drawMode = SpriteDrawMode.Simple;
+    const primitive = (this._primitive = new Primitive(entity.engine));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.Position, 0, VertexElementFormat.Vector3, 0));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.UV, 12, VertexElementFormat.Vector2, 0));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.Color, 20, VertexElementFormat.Vector4, 0));
     this._dirtyUpdateFlag |= ImageUpdateFlags.Color;
     this.setMaterial(this._engine._spriteDefaultMaterial);
     this._onSpriteChange = this._onSpriteChange.bind(this);
@@ -130,8 +144,10 @@ export class Image extends UIRenderer {
    * @internal
    */
   protected override _render(context: RenderContext): void {
-    const { x: width, y: height } = this._uiTransform.rect;
-    if (!this.sprite?.texture || !width || !height) {
+    const { _sprite: sprite } = this;
+    const { _uiTransform: uiTransform } = this;
+    const { x: width, y: height } = uiTransform.rect;
+    if (!sprite?.texture || !width || !height) {
       return;
     }
 
@@ -146,27 +162,35 @@ export class Image extends UIRenderer {
 
     // Update position
     if (this._dirtyUpdateFlag & RendererUpdateFlags.WorldVolume) {
-      this._assembler.updatePositions(this);
+      this._assembler.updatePositions(
+        sprite,
+        width,
+        height,
+        uiTransform.pivot,
+        this.entity.transform.worldMatrix,
+        this._primitive,
+        this._subPrimitive,
+        this._bounds
+      );
       this._dirtyUpdateFlag &= ~RendererUpdateFlags.WorldVolume;
     }
 
     // Update uv
     if (this._dirtyUpdateFlag & ImageUpdateFlags.UV) {
-      this._assembler.updateUVs(this);
+      this._assembler.updateUVs(sprite, this._primitive, this._subPrimitive);
       this._dirtyUpdateFlag &= ~ImageUpdateFlags.UV;
     }
 
     // Update color
     if (this._dirtyUpdateFlag & ImageUpdateFlags.Color) {
-      this._assembler.updateColor(this);
+      this._assembler.updateColor(this._primitive, this._color);
       this._dirtyUpdateFlag &= ~ImageUpdateFlags.Color;
     }
 
     // Push primitive
     const { engine } = context.camera;
     const renderData = engine._spriteRenderDataPool.getFromPool();
-    const { _chunk: chunk } = this;
-    renderData.set(this, material, chunk._meshBuffer._mesh._primitive, chunk._subMesh, this.sprite.texture, chunk);
+    renderData.set(this, material, this._primitive, this._subPrimitive, this.sprite.texture);
     renderData.usage = RenderDataUsage.Sprite;
     engine._batcherManager.commitRenderData(context, renderData);
   }

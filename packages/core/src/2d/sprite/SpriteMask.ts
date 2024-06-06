@@ -2,15 +2,15 @@ import { BoundingBox, Matrix } from "@galacean/engine-math";
 import { Entity } from "../../Entity";
 import { RenderContext } from "../../RenderPipeline/RenderContext";
 import { RenderElement } from "../../RenderPipeline/RenderElement";
+import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
 import { Renderer, RendererUpdateFlags } from "../../Renderer";
 import { assignmentClone, ignoreClone } from "../../clone/CloneManager";
+import { Primitive, SubMesh } from "../../graphic";
 import { ShaderProperty } from "../../shader/ShaderProperty";
 import { SimpleSpriteAssembler } from "../assembler/SimpleSpriteAssembler";
 import { SpriteMaskLayer } from "../enums/SpriteMaskLayer";
 import { SpriteModifyFlags } from "../enums/SpriteModifyFlags";
 import { Sprite } from "./Sprite";
-import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
-import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 
 /**
  * A component for masking Sprites.
@@ -29,7 +29,10 @@ export class SpriteMask extends Renderer {
 
   /** @internal */
   @ignoreClone
-  _chunk: MBChunk;
+  _primitive: Primitive;
+  /** @internal */
+  @ignoreClone
+  _subPrimitive: SubMesh;
 
   @ignoreClone
   private _sprite: Sprite = null;
@@ -169,7 +172,7 @@ export class SpriteMask extends Renderer {
    */
   constructor(entity: Entity) {
     super(entity);
-    SimpleSpriteAssembler.resetData(this);
+    SimpleSpriteAssembler.resetData(this._primitive, this._subPrimitive);
     this.setMaterial(this._engine._spriteMaskDefaultMaterial);
     this.shaderData.setFloat(SpriteMask._alphaCutoffProperty, this._alphaCutoff);
     this._onSpriteChange = this._onSpriteChange.bind(this);
@@ -200,8 +203,20 @@ export class SpriteMask extends Renderer {
    * @internal
    */
   protected override _updateBounds(worldBounds: BoundingBox): void {
+    const { _sprite: sprite } = this;
     if (this.sprite) {
-      SimpleSpriteAssembler.updatePositions(this);
+      SimpleSpriteAssembler.updatePositions(
+        sprite,
+        this.width,
+        this.height,
+        sprite.pivot,
+        this.entity.transform.worldMatrix,
+        this._primitive,
+        this._subPrimitive,
+        this._bounds,
+        this._flipX,
+        this._flipY
+      );
     } else {
       worldBounds.min.set(0, 0, 0);
       worldBounds.max.set(0, 0, 0);
@@ -213,7 +228,8 @@ export class SpriteMask extends Renderer {
    * @inheritdoc
    */
   protected override _render(context: RenderContext): void {
-    if (!this.sprite?.texture || !this.width || !this.height) {
+    const { sprite, width, height, _primitive: primitive, _subPrimitive: subPrimitive } = this;
+    if (!sprite?.texture || !width || !height) {
       return;
     }
 
@@ -229,20 +245,30 @@ export class SpriteMask extends Renderer {
 
     // Update position
     if (this._dirtyUpdateFlag & RendererUpdateFlags.WorldVolume) {
-      SimpleSpriteAssembler.updatePositions(this);
+      SimpleSpriteAssembler.updatePositions(
+        sprite,
+        width,
+        height,
+        sprite.pivot,
+        this.entity.transform.worldMatrix,
+        primitive,
+        this._subPrimitive,
+        this._bounds,
+        this._flipX,
+        this._flipY
+      );
       this._dirtyUpdateFlag &= ~RendererUpdateFlags.WorldVolume;
     }
 
     // Update uv
     if (this._dirtyUpdateFlag & SpriteMaskUpdateFlags.UV) {
-      SimpleSpriteAssembler.updateUVs(this);
+      SimpleSpriteAssembler.updateUVs(sprite, primitive);
       this._dirtyUpdateFlag &= ~SpriteMaskUpdateFlags.UV;
     }
 
     engine._spriteMaskManager.addMask(this);
     const renderData = engine._spriteRenderDataPool.getFromPool();
-    const { _chunk: chunk } = this;
-    renderData.set(this, material, chunk._meshBuffer._mesh._primitive, chunk._subMesh, this.sprite.texture, chunk);
+    renderData.set(this, material, primitive, subPrimitive, this.sprite.texture);
     renderData.usage = RenderDataUsage.SpriteMask;
 
     const renderElement = engine._renderElementPool.getFromPool();
@@ -264,10 +290,7 @@ export class SpriteMask extends Renderer {
     super._onDestroy();
 
     this._sprite = null;
-    if (this._chunk) {
-      this.engine._batcherManager._batcher2D.freeChunk(this._chunk);
-      this._chunk = null;
-    }
+    this._primitive.destroy();
   }
 
   private _calDefaultSize(): void {

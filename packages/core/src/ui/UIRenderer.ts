@@ -1,9 +1,7 @@
 import { DependentMode, dependentComponents } from "../ComponentsDependencies";
 import { Entity } from "../Entity";
 import { RenderContext } from "../RenderPipeline/RenderContext";
-import { MBChunk } from "../RenderPipeline/batcher/MeshBuffer";
 import { Renderer } from "../Renderer";
-import { ignoreClone } from "../clone/CloneManager";
 import { ShaderMacroCollection } from "../shader/ShaderMacroCollection";
 import { UICanvas } from "./UICanvas";
 import { UITransform, UITransformModifyFlags } from "./UITransform";
@@ -12,10 +10,6 @@ import { UITransform, UITransformModifyFlags } from "./UITransform";
 export class UIRenderer extends Renderer {
   protected _canvas: UICanvas;
   protected _uiTransform: UITransform;
-
-  /** @internal */
-  @ignoreClone
-  _chunk: MBChunk;
 
   get canvas(): UICanvas {
     return this._canvas;

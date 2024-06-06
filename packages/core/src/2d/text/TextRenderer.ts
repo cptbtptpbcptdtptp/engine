@@ -2,10 +2,12 @@ import { BoundingBox, Color, Matrix, Vector3 } from "@galacean/engine-math";
 import { Engine } from "../../Engine";
 import { Entity } from "../../Entity";
 import { RenderContext } from "../../RenderPipeline/RenderContext";
+import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
 import { Renderer } from "../../Renderer";
 import { TransformModifyFlags } from "../../Transform";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
 import { CompareFunction } from "../../shader/enums/CompareFunction";
+import { Pool } from "../../utils/Pool";
 import { FontStyle } from "../enums/FontStyle";
 import { SpriteMaskInteraction } from "../enums/SpriteMaskInteraction";
 import { SpriteMaskLayer } from "../enums/SpriteMaskLayer";
@@ -15,8 +17,6 @@ import { CharRenderInfo } from "./CharRenderInfo";
 import { Font } from "./Font";
 import { SubFont } from "./SubFont";
 import { TextUtils } from "./TextUtils";
-import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
-import { Pool } from "../../utils/Pool";
 
 /**
  * Renders a text for 2D graphics.
@@ -324,15 +324,15 @@ export class TextRenderer extends Renderer {
     // Clear render data.
     const pool = TextRenderer._charRenderInfoPool;
     const charRenderInfos = this._charRenderInfos;
-    const batcher2D = this.engine._batcherManager._batcher2D;
+    const { _batcher: batcher } = this.engine;
     for (let i = 0, n = charRenderInfos.length; i < n; ++i) {
       const charRenderInfo = charRenderInfos[i];
-      batcher2D.freeChunk(charRenderInfo.chunk);
-      charRenderInfo.chunk = null;
+      batcher.free(charRenderInfo.primitive);
+      charRenderInfo.dispose();
       pool.free(charRenderInfo);
     }
-    charRenderInfos.length = 0;
 
+    charRenderInfos.length = 0;
     this._subFont && (this._subFont = null);
   }
 
@@ -424,8 +424,7 @@ export class TextRenderer extends Renderer {
     for (let i = 0; i < charCount; ++i) {
       const charRenderInfo = charRenderInfos[i];
       const renderData = spriteRenderDataPool.getFromPool();
-      const { chunk } = charRenderInfo;
-      renderData.set(this, material, chunk._meshBuffer._mesh._primitive, chunk._subMesh, charRenderInfo.texture, chunk);
+      renderData.set(this, material, charRenderInfo.primitive, charRenderInfo.subPrimitive, charRenderInfo.texture);
       renderData.usage = RenderDataUsage.Text;
       batcherManager.commitRenderData(context, renderData);
     }
@@ -502,9 +501,10 @@ export class TextRenderer extends Renderer {
       // Bottom-Right
       Vector3.add(worldPosition1, worldPosition2, worldPosition2);
 
-      const { chunk } = charRenderInfo;
-      const vertices = chunk._meshBuffer._vertices;
-      let index = chunk._vEntry.start;
+      const { primitive } = charRenderInfo;
+      const vertexBufferBinding = primitive.vertexBufferBindings[0];
+      const vertices = new Float32Array(vertexBufferBinding._buffer.data.buffer);
+      let index = vertexBufferBinding._offset / 4;
       for (let i = 0; i < 4; ++i) {
         const position = TextRenderer._worldPositions[i];
         vertices[index] = position.x;
@@ -582,12 +582,13 @@ export class TextRenderer extends Renderer {
               firstRow < 0 && (firstRow = j);
               const charRenderInfo = (charRenderInfos[renderDataCount++] ||= charRenderInfoPool.alloc());
               charRenderInfo.init(this.engine);
-              const { chunk, localPositions } = charRenderInfo;
+              const { primitive, localPositions } = charRenderInfo;
               charRenderInfo.texture = charFont._getTextureByIndex(charInfo.index);
-              const vertices = chunk._meshBuffer._vertices;
+              const vertexBufferBinding = primitive.vertexBufferBindings[0];
+              const vertices = new Float32Array(vertexBufferBinding._buffer.data.buffer);
               const { uvs } = charInfo;
               const { r, g, b, a } = color;
-              let index = chunk._vEntry.start + 3;
+              let index = vertexBufferBinding._offset / 4 + 3;
               for (let i = 0; i < 4; ++i) {
                 vertices[index] = uvs[i].x;
                 vertices[index + 1] = uvs[i].y;
@@ -629,10 +630,12 @@ export class TextRenderer extends Renderer {
     // Revert excess render data to pool.
     const lastRenderDataCount = charRenderInfos.length;
     if (lastRenderDataCount > renderDataCount) {
+      const { _batcher: batcher } = this.engine;
+
       for (let i = renderDataCount; i < lastRenderDataCount; ++i) {
         const charRenderInfo = charRenderInfos[i];
-        this.engine._batcherManager._batcher2D.freeChunk(charRenderInfo.chunk);
-        charRenderInfo.chunk = null;
+        batcher.free(charRenderInfo.primitive);
+        charRenderInfo.dispose();
         charRenderInfoPool.free(charRenderInfo);
       }
       charRenderInfos.length = renderDataCount;

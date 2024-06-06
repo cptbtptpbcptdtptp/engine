@@ -1,0 +1,8 @@
+export enum PointerEventType {
+  None = 0x0,
+  Down = 0x1,
+  Up = 0x2,
+  Leave = 0x4,
+  Move = 0x8,
+  Cancel = 0x10
+}

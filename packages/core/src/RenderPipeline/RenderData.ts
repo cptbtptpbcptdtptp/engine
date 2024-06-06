@@ -16,7 +16,9 @@ export class RenderData implements IPoolElement {
   component: Renderer;
   usage: RenderDataUsage = RenderDataUsage.Mesh;
 
-  drawInfo: IRenderDrawInfo[] = [];
+  material: Material;
+  primitive: Primitive;
+  subPrimitive: SubMesh;
 
   /** @internal */
   _priority: number;
@@ -31,7 +33,9 @@ export class RenderData implements IPoolElement {
 
   set(component: Renderer, material: Material, primitive: Primitive, subPrimitive: SubMesh): void {
     this.component = component;
-    this.drawInfo[0] = { material, primitive, subPrimitive };
+    this.material = material;
+    this.primitive = primitive;
+    this.subPrimitive = subPrimitive;
     this._priority = component.priority;
     this._materialPriority = material._priority;
     this._componentInstanceId = component.instanceId;
@@ -40,6 +44,6 @@ export class RenderData implements IPoolElement {
 
   dispose(): void {
     this.component = null;
-    this.drawInfo.length = 0;
+    this.material = this.primitive = this.subPrimitive = null;
   }
 }

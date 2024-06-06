@@ -1,8 +1,11 @@
 import { BoundingBox, Color, MathUtil, Matrix } from "@galacean/engine-math";
 import { Entity } from "../../Entity";
 import { RenderContext } from "../../RenderPipeline/RenderContext";
+import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
 import { Renderer, RendererUpdateFlags } from "../../Renderer";
 import { assignmentClone, deepClone, ignoreClone } from "../../clone/CloneManager";
+import { MeshTopology, Primitive, SubMesh, VertexElement, VertexElementFormat } from "../../graphic";
+import { VertexAttribute } from "../../mesh";
 import { ShaderProperty } from "../../shader/ShaderProperty";
 import { CompareFunction } from "../../shader/enums/CompareFunction";
 import { IAssembler } from "../assembler/IAssembler";
@@ -15,8 +18,6 @@ import { SpriteMaskLayer } from "../enums/SpriteMaskLayer";
 import { SpriteModifyFlags } from "../enums/SpriteModifyFlags";
 import { SpriteTileMode } from "../enums/SpriteTileMode";
 import { Sprite } from "./Sprite";
-import { RenderDataUsage } from "../../RenderPipeline/enums/RenderDataUsage";
-import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 
 /**
  * Renders a Sprite for 2D graphics.
@@ -27,8 +28,10 @@ export class SpriteRenderer extends Renderer {
 
   /** @internal */
   @ignoreClone
-  _chunk: MBChunk;
-
+  _primitive: Primitive;
+  /** @internal */
+  @ignoreClone
+  _subPrimitive: SubMesh = new SubMesh(0, 0, MeshTopology.Triangles);
   @ignoreClone
   private _drawMode: SpriteDrawMode;
   @assignmentClone
@@ -84,7 +87,7 @@ export class SpriteRenderer extends Renderer {
         default:
           break;
       }
-      this._assembler.resetData(this);
+      this._assembler.resetData(this._primitive, this._subPrimitive);
       this._dirtyUpdateFlag |= SpriteRendererUpdateFlags.VertexData;
     }
   }
@@ -274,6 +277,10 @@ export class SpriteRenderer extends Renderer {
    */
   constructor(entity: Entity) {
     super(entity);
+    const primitive = (this._primitive = new Primitive(entity.engine));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.Position, 0, VertexElementFormat.Vector3, 0));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.UV, 12, VertexElementFormat.Vector2, 0));
+    primitive.addVertexElement(new VertexElement(VertexAttribute.Color, 20, VertexElementFormat.Vector4, 0));
     this.drawMode = SpriteDrawMode.Simple;
     this._dirtyUpdateFlag |= SpriteRendererUpdateFlags.Color;
     this.setMaterial(this._engine._spriteDefaultMaterial);
@@ -285,7 +292,7 @@ export class SpriteRenderer extends Renderer {
    */
   override _cloneTo(target: SpriteRenderer, srcRoot: Entity, targetRoot: Entity): void {
     super._cloneTo(target, srcRoot, targetRoot);
-    target._assembler.resetData(target);
+    target._assembler.resetData(target._primitive, target._subPrimitive);
     target.sprite = this._sprite;
     target.drawMode = this._drawMode;
   }
@@ -315,7 +322,8 @@ export class SpriteRenderer extends Renderer {
         this.height,
         sprite.pivot,
         this.entity.transform.worldMatrix,
-        this._chunk,
+        this._primitive,
+        this._subPrimitive,
         this._bounds,
         this._flipX,
         this._flipY
@@ -330,7 +338,7 @@ export class SpriteRenderer extends Renderer {
    * @internal
    */
   protected override _render(context: RenderContext): void {
-    const { sprite, width, height, _chunk: chunk } = this;
+    const { sprite, width, height, _primitive: primitive } = this;
     if (!sprite?.texture || !width || !height) {
       return;
     }
@@ -352,7 +360,8 @@ export class SpriteRenderer extends Renderer {
         height,
         sprite.pivot,
         this.entity.transform.worldMatrix,
-        this._chunk,
+        this._primitive,
+        this._subPrimitive,
         this._bounds,
         this._flipX,
         this._flipY
@@ -362,20 +371,20 @@ export class SpriteRenderer extends Renderer {
 
     // Update uv
     if (this._dirtyUpdateFlag & SpriteRendererUpdateFlags.UV) {
-      this._assembler.updateUVs(sprite, chunk);
+      this._assembler.updateUVs(sprite, this._primitive, this._subPrimitive);
       this._dirtyUpdateFlag &= ~SpriteRendererUpdateFlags.UV;
     }
 
     // Update color
     if (this._dirtyUpdateFlag & SpriteRendererUpdateFlags.Color) {
-      this._assembler.updateColor(chunk, this.color);
+      this._assembler.updateColor(this._primitive, this.color);
       this._dirtyUpdateFlag &= ~SpriteRendererUpdateFlags.Color;
     }
 
     // Push primitive
     const { engine } = context.camera;
     const renderData = engine._spriteRenderDataPool.getFromPool();
-    renderData.set(this, material, chunk._meshBuffer._mesh._primitive, chunk._subMesh, this.sprite.texture, chunk);
+    renderData.set(this, material, primitive, this._subPrimitive, this.sprite.texture);
     renderData.usage = RenderDataUsage.Sprite;
     engine._batcherManager.commitRenderData(context, renderData);
   }
@@ -396,10 +405,7 @@ export class SpriteRenderer extends Renderer {
     this._color = null;
     this._sprite = null;
     this._assembler = null;
-    if (this._chunk) {
-      this.engine._batcherManager._batcher2D.freeChunk(this._chunk);
-      this._chunk = null;
-    }
+    this._primitive.destroy();
   }
 
   private _calDefaultSize(): void {

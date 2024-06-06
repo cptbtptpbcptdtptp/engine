@@ -201,8 +201,7 @@ export class BasicRenderPipeline {
    * @param data - Render data
    */
   pushRenderData(context: RenderContext, data: RenderData): void {
-    const { drawInfo } = data;
-    const { material } = drawInfo[0];
+    const { material } = data;
     const { renderStates } = material;
     const materialSubShader = material.shader.subShaders[0];
     const replacementShader = context.replacementShader;

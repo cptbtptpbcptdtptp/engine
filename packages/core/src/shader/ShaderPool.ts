@@ -1,6 +1,4 @@
 import { PipelineStage } from "../RenderPipeline/enums/PipelineStage";
-import uiDefaultFs from "../shaderlib.extra/uiDefault.fs.glsl";
-import uiDefaultVs from "../shaderlib.extra/uiDefault.vs.glsl";
 import blitFs from "../shaderlib/extra/Blit.fs.glsl";
 import blitVs from "../shaderlib/extra/Blit.vs.glsl";
 import skyProceduralFs from "../shaderlib/extra/SkyProcedural.fs.glsl";
@@ -24,6 +22,8 @@ import spriteMaskFs from "../shaderlib/extra/sprite-mask.fs.glsl";
 import spriteMaskVs from "../shaderlib/extra/sprite-mask.vs.glsl";
 import spriteFs from "../shaderlib/extra/sprite.fs.glsl";
 import spriteVs from "../shaderlib/extra/sprite.vs.glsl";
+import uiDefaultFs from "../shaderlib/extra/uiDefault.fs.glsl";
+import uiDefaultVs from "../shaderlib/extra/uiDefault.vs.glsl";
 import unlitFs from "../shaderlib/extra/unlit.fs.glsl";
 import unlitVs from "../shaderlib/extra/unlit.vs.glsl";
 import { Shader } from "./Shader";

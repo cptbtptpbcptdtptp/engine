@@ -1,9 +1,7 @@
 import { BoundingBox, Color, Matrix, Vector2 } from "@galacean/engine-math";
-import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
-import { UIRenderer } from "../../ui";
-import { Sprite, SpriteMask } from "../sprite";
-import { SpriteRenderer } from "../sprite/SpriteRenderer";
+import { Primitive, SubMesh } from "../../graphic";
+import { Sprite } from "../sprite";
 import { IAssembler } from "./IAssembler";
 
 /**
@@ -14,18 +12,21 @@ export class SimpleSpriteAssembler {
   static _rectangleTriangles: number[] = [0, 1, 2, 2, 1, 3];
   static _worldMatrix: Matrix = new Matrix();
 
-  static resetData(renderer: UIRenderer | SpriteRenderer | SpriteMask): void {
-    const batcher =
-      renderer instanceof SpriteMask
-        ? renderer.engine._spriteMaskManager._batcher
-        : renderer.engine._batcherManager._batcher2D;
-    if (renderer._chunk) {
-      batcher.freeChunk(renderer._chunk);
-      renderer._chunk = batcher.allocateChunk(4);
-    } else {
-      renderer._chunk = batcher.allocateChunk(4);
-    }
-    renderer._chunk._indices = this._rectangleTriangles;
+  static resetData(primitive: Primitive, subPrimitive: SubMesh): void {
+    primitive.engine._batcher.allocate(primitive, 4, 6);
+    const indexBufferBinding = primitive.indexBufferBinding;
+    const vertexBufferBinding = primitive.vertexBufferBindings[0];
+    const indexArr = new Uint16Array(indexBufferBinding._buffer.data.buffer);
+    const vertexOffset = vertexBufferBinding._offset / 36;
+    let indexOffset = indexBufferBinding._offset / 2;
+    indexArr[indexOffset] = vertexOffset;
+    indexArr[indexOffset + 1] = 1 + vertexOffset;
+    indexArr[indexOffset + 2] = 2 + vertexOffset;
+    indexArr[indexOffset + 3] = 2 + vertexOffset;
+    indexArr[indexOffset + 4] = 1 + vertexOffset;
+    indexArr[indexOffset + 5] = 3 + vertexOffset;
+    subPrimitive.start = indexOffset;
+    subPrimitive.count = 6;
   }
 
   static updatePositions(
@@ -34,7 +35,8 @@ export class SimpleSpriteAssembler {
     height: number,
     pivot: Vector2,
     matrix: Matrix,
-    chunk: MBChunk,
+    primitive: Primitive,
+    subPrimitive: SubMesh,
     bounds: BoundingBox,
     flipX?: boolean,
     flipY?: boolean
@@ -61,8 +63,9 @@ export class SimpleSpriteAssembler {
     // ---------------
     // Update positions.
     const spritePositions = sprite._getPositions();
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start;
+    const vertexBufferBinding = primitive.vertexBufferBindings[0];
+    const vertices = new Float32Array(vertexBufferBinding._buffer.data.buffer);
+    let index = vertexBufferBinding._offset / 4;
     for (let i = 0; i < 4; ++i) {
       const { x, y } = spritePositions[i];
       vertices[index] = wE[0] * x + wE[4] * y + wE[12];
@@ -73,12 +76,13 @@ export class SimpleSpriteAssembler {
     BoundingBox.transform(sprite._getBounds(), worldMatrix, bounds);
   }
 
-  static updateUVs(sprite: Sprite, chunk: MBChunk) {
+  static updateUVs(sprite: Sprite, primitive: Primitive) {
     const spriteUVs = sprite._getUVs();
     const { x: left, y: bottom } = spriteUVs[0];
     const { x: right, y: top } = spriteUVs[3];
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start + 3;
+    const vertexBufferBinding = primitive.vertexBufferBindings[0];
+    const vertices = new Float32Array(vertexBufferBinding._buffer.data.buffer);
+    let index = vertexBufferBinding._offset / 4 + 3;
     vertices[index] = left;
     vertices[index + 1] = bottom;
     index += 9;
@@ -92,10 +96,11 @@ export class SimpleSpriteAssembler {
     vertices[index + 1] = top;
   }
 
-  static updateColor(chunk: MBChunk, color: Color): void {
+  static updateColor(primitive: Primitive, color: Color): void {
     const { r, g, b, a } = color;
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start + 5;
+    const vertexBufferBinding = primitive.vertexBufferBindings[0];
+    const vertices = new Float32Array(vertexBufferBinding._buffer.data.buffer);
+    let index = vertexBufferBinding._offset / 4 + 5;
     for (let i = 0; i < 4; ++i) {
       vertices[index] = r;
       vertices[index + 1] = g;

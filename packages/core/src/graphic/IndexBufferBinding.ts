@@ -9,6 +9,10 @@ export class IndexBufferBinding {
   _buffer: Buffer;
   /** @internal */
   _format: IndexFormat;
+  /** @internal */
+  _offset: number;
+  /** @internal */
+  _size: number;
 
   /**
    * Index buffer.
@@ -29,8 +33,10 @@ export class IndexBufferBinding {
    * @param buffer - Index buffer
    * @param format - Index buffer format
    */
-  constructor(buffer: Buffer, format: IndexFormat) {
+  constructor(buffer: Buffer, format: IndexFormat, offset: number = 0, size: number = 0) {
     this._buffer = buffer;
     this._format = format;
+    this._offset = offset;
+    this._size = size;
   }
 }

@@ -1,9 +1,7 @@
 import { BoundingBox, Color, Matrix, Vector2 } from "@galacean/engine-math";
-import { MBChunk } from "../../RenderPipeline/batcher/MeshBuffer";
 import { StaticInterfaceImplement } from "../../base/StaticInterfaceImplement";
-import { UIRenderer } from "../../ui";
+import { Primitive, SubMesh } from "../../graphic";
 import { Sprite } from "../sprite";
-import { SpriteRenderer } from "../sprite/SpriteRenderer";
 import { IAssembler } from "./IAssembler";
 
 /**
@@ -17,15 +15,18 @@ export class SlicedSpriteAssembler {
   ];
   static _worldMatrix: Matrix = new Matrix();
 
-  static resetData(renderer: SpriteRenderer | UIRenderer): void {
-    const batcher = renderer.engine._batcherManager._batcher2D;
-    if (renderer._chunk) {
-      batcher.freeChunk(renderer._chunk);
-      renderer._chunk = batcher.allocateChunk(16);
-    } else {
-      renderer._chunk = batcher.allocateChunk(16);
+  static resetData(primitive: Primitive, subPrimitive: SubMesh): void {
+    primitive.engine._batcher.allocate(primitive, 16, 54);
+    const { vertexBufferBindings, indexBufferBinding } = primitive;
+    const vertexOffset = vertexBufferBindings[0]._offset / 36;
+    const indexArr = new Uint16Array(indexBufferBinding._buffer.data.buffer);
+    let indexOffset = indexBufferBinding._offset / 2;
+    const { _rectangleTriangles: triangles } = this;
+    for (let i = 0, n = triangles.length; i < n; i++) {
+      indexArr[indexOffset + i] = triangles[i] + vertexOffset;
     }
-    renderer._chunk._indices = this._rectangleTriangles;
+    subPrimitive.start = indexOffset;
+    subPrimitive.count = 54;
   }
 
   static updatePositions(
@@ -34,129 +35,14 @@ export class SlicedSpriteAssembler {
     height: number,
     pivot: Vector2,
     matrix: Matrix,
-    chunk: MBChunk,
+    primitive: Primitive,
+    subPrimitive: SubMesh,
     bounds: BoundingBox,
     flipX?: boolean,
     flipY?: boolean
-  ): void {
-    const { border } = sprite;
-    // Update local positions.
-    const spritePositions = sprite._getPositions();
-    const { x: left, y: bottom } = spritePositions[0];
-    const { x: right, y: top } = spritePositions[3];
-    const { width: expectWidth, height: expectHeight } = sprite;
-    const fixedLeft = expectWidth * border.x;
-    const fixedBottom = expectHeight * border.y;
-    const fixedRight = expectWidth * border.z;
-    const fixedTop = expectHeight * border.w;
+  ): void {}
 
-    // ------------------------
-    //     [3]
-    //      |
-    //     [2]
-    //      |
-    //     [1]
-    //      |
-    // row [0] - [1] - [2] - [3]
-    //    column
-    // ------------------------
-    // Calculate row and column.
-    let row: number[], column: number[];
-    if (fixedLeft + fixedRight > width) {
-      const widthScale = width / (fixedLeft + fixedRight);
-      row = [
-        expectWidth * left * widthScale,
-        fixedLeft * widthScale,
-        fixedLeft * widthScale,
-        width - expectWidth * (1 - right) * widthScale
-      ];
-    } else {
-      row = [expectWidth * left, fixedLeft, width - fixedRight, width - expectWidth * (1 - right)];
-    }
+  static updateUVs(sprite: Sprite, primitive: Primitive) {}
 
-    if (fixedTop + fixedBottom > height) {
-      const heightScale = height / (fixedTop + fixedBottom);
-      column = [
-        expectHeight * bottom * heightScale,
-        fixedBottom * heightScale,
-        fixedBottom * heightScale,
-        height - expectHeight * (1 - top) * heightScale
-      ];
-    } else {
-      column = [expectHeight * bottom, fixedBottom, height - fixedTop, height - expectHeight * (1 - top)];
-    }
-
-    // Update renderer's worldMatrix.
-    const { x: pivotX, y: pivotY } = pivot;
-    const localTransX = width * pivotX;
-    const localTransY = height * pivotY;
-    // Renderer's worldMatrix.
-    const { _worldMatrix: worldMatrix } = this;
-    const { elements: wE } = worldMatrix;
-    // Parent's worldMatrix.
-    const { elements: pWE } = matrix;
-    const sx = flipX ? -1 : 1;
-    const sy = flipY ? -1 : 1;
-    (wE[0] = pWE[0] * sx), (wE[1] = pWE[1] * sx), (wE[2] = pWE[2] * sx);
-    (wE[4] = pWE[4] * sy), (wE[5] = pWE[5] * sy), (wE[6] = pWE[6] * sy);
-    (wE[8] = pWE[8]), (wE[9] = pWE[9]), (wE[10] = pWE[10]);
-    wE[12] = pWE[12] - localTransX * wE[0] - localTransY * wE[4];
-    wE[13] = pWE[13] - localTransX * wE[1] - localTransY * wE[5];
-    wE[14] = pWE[14] - localTransX * wE[2] - localTransY * wE[6];
-
-    // ------------------------
-    //  3 - 7 - 11 - 15
-    //  |   |   |    |
-    //  2 - 6 - 10 - 14
-    //  |   |   |    |
-    //  1 - 5 - 9  - 13
-    //  |   |   |    |
-    //  0 - 4 - 8  - 12
-    // ------------------------
-    // Assemble position and uv.
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start;
-    for (let i = 0; i < 4; i++) {
-      const rowValue = row[i];
-      for (let j = 0; j < 4; j++) {
-        const columnValue = column[j];
-        vertices[index] = wE[0] * rowValue + wE[4] * columnValue + wE[12];
-        vertices[index + 1] = wE[1] * rowValue + wE[5] * columnValue + wE[13];
-        vertices[index + 2] = wE[2] * rowValue + wE[6] * columnValue + wE[14];
-        index += 9;
-      }
-    }
-
-    const { min, max } = bounds;
-    min.set(row[0], column[0], 0);
-    max.set(row[3], column[3], 0);
-    bounds.transform(worldMatrix);
-  }
-
-  static updateUVs(sprite: Sprite, chunk: MBChunk): void {
-    const vertices = chunk._meshBuffer._vertices;
-    const spriteUVs = sprite._getUVs();
-    let index = chunk._vEntry.start + 3;
-    for (let i = 0; i < 4; i++) {
-      const rowU = spriteUVs[i].x;
-      for (let j = 0; j < 4; j++) {
-        vertices[index] = rowU;
-        vertices[index + 1] = spriteUVs[j].y;
-        index += 9;
-      }
-    }
-  }
-
-  static updateColor(chunk: MBChunk, color: Color): void {
-    const { r, g, b, a } = color;
-    const vertices = chunk._meshBuffer._vertices;
-    let index = chunk._vEntry.start + 5;
-    for (let i = 0; i < 16; ++i) {
-      vertices[index] = r;
-      vertices[index + 1] = g;
-      vertices[index + 2] = b;
-      vertices[index + 3] = a;
-      index += 9;
-    }
-  }
+  static updateColor(primitive: Primitive, color: Color): void {}
 }

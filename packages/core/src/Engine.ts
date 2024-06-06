@@ -18,7 +18,10 @@ import { ClassPool } from "./RenderPipeline/ClassPool";
 import { RenderContext } from "./RenderPipeline/RenderContext";
 import { RenderData } from "./RenderPipeline/RenderData";
 import { RenderElement } from "./RenderPipeline/RenderElement";
+import { SpriteMaskManager } from "./RenderPipeline/SpriteMaskManager";
 import { SpriteRenderData } from "./RenderPipeline/SpriteRenderData";
+import { Batcher } from "./RenderPipeline/batcher/Batcher";
+import { BatcherManager } from "./RenderPipeline/batcher/BatcherManager";
 import { Scene } from "./Scene";
 import { SceneManager } from "./SceneManager";
 import { ContentRestorer } from "./asset/ContentRestorer";
@@ -45,8 +48,6 @@ import { CullMode } from "./shader/enums/CullMode";
 import { RenderQueueType } from "./shader/enums/RenderQueueType";
 import { RenderState } from "./shader/state/RenderState";
 import { Texture2D, Texture2DArray, TextureCube, TextureCubeFace, TextureFormat } from "./texture";
-import { BatcherManager } from "./RenderPipeline/batcher/BatcherManager";
-import { SpriteMaskManager } from "./RenderPipeline/SpriteMaskManager";
 import { XRManager } from "./xr/XRManager";
 
 ShaderPool.init();
@@ -71,6 +72,9 @@ export class Engine extends EventDispatcher {
   _batcherManager: BatcherManager;
   /** @internal */
   _spriteMaskManager: SpriteMaskManager;
+
+  /** @internal */
+  _batcher: Batcher;
 
   _particleBufferUtils: ParticleBufferUtils;
   /** @internal */
@@ -270,6 +274,7 @@ export class Engine extends EventDispatcher {
 
     this.inputManager = new InputManager(this);
     this._batcherManager = new BatcherManager(this);
+    this._batcher = new Batcher(this);
     this._spriteMaskManager = new SpriteMaskManager(this);
     this.inputManager = new InputManager(this, configuration.input);
 

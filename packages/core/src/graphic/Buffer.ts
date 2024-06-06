@@ -3,6 +3,7 @@ import { TypedArray } from "../base";
 import { Engine } from "../Engine";
 import { IPlatformBuffer } from "../renderingHardwareInterface";
 import { UpdateFlagManager } from "../UpdateFlagManager";
+import { IPoolElement } from "../utils/Pool";
 import { BufferBindFlag } from "./enums/BufferBindFlag";
 import { BufferUsage } from "./enums/BufferUsage";
 import { SetDataOptions } from "./enums/SetDataOptions";
@@ -14,6 +15,8 @@ export class Buffer extends GraphicsResource {
   /** @internal */
   _dataUpdateManager: UpdateFlagManager = new UpdateFlagManager();
 
+  /** @internal */
+  private _freeAreas: Area[] = [];
   private _type: BufferBindFlag;
   private _byteLength: number;
   private _bufferUsage: BufferUsage;
@@ -108,6 +111,7 @@ export class Buffer extends GraphicsResource {
       this._platformBuffer = engine._hardwareRenderer.createPlatformBuffer(type, byteLengthOrData, bufferUsage);
       if (readable) {
         this._data = new Uint8Array(byteLengthOrData);
+        this._freeAreas = [new Area(0, byteLengthOrData)];
       }
     } else {
       const data = byteLengthOrData;
@@ -123,6 +127,7 @@ export class Buffer extends GraphicsResource {
                 (<ArrayBufferView>data).byteOffset + byteLength
               );
         this._data = new Uint8Array(buffer);
+        this._freeAreas = [];
       }
     }
   }
@@ -231,6 +236,61 @@ export class Buffer extends GraphicsResource {
     this._readable = false;
   }
 
+  allocate(need: number): number {
+    if (!this._readable) {
+      throw "Buffer is not readable.";
+    }
+    const { _freeAreas: freeAreas } = this;
+    for (let i = 0, l = freeAreas.length; i < l; ++i) {
+      const area = freeAreas[i];
+      const len = area.size;
+      if (len > need) {
+        const offset = area.offset;
+        area.offset += need;
+        area.size -= need;
+        return offset;
+      } else if (len === need) {
+        freeAreas.splice(i, 1);
+        return area.offset;
+      }
+    }
+    return -1;
+  }
+
+  free(offset: number, size: number): void {
+    if (!this._readable) {
+      throw "Buffer is not readable.";
+    }
+    const { _freeAreas: freeAreas } = this;
+    const length = freeAreas.length;
+    if (length === 0) {
+      freeAreas.push(new Area(offset, size));
+      return;
+    }
+
+    let notMerge = true;
+    let preEnd = offset + size;
+    for (let i = 0; i < length; ++i) {
+      const area = freeAreas[i];
+      const curEnd = area.offset + area.size;
+      if (preEnd < area.offset) {
+        notMerge && freeAreas.splice(i, 0, new Area(offset, size));
+        return;
+      } else if (preEnd === area.offset) {
+        area.offset = offset;
+        size = area.size += size;
+        preEnd = curEnd;
+        notMerge = false;
+      } else if (offset === curEnd) {
+        size = area.size += size;
+        offset = area.offset;
+        notMerge = false;
+      } else if (offset > curEnd) {
+        i + 1 === length && freeAreas.push(new Area(offset, size));
+      }
+    }
+  }
+
   override _rebuild(): void {
     const platformBuffer = this._engine._hardwareRenderer.createPlatformBuffer(
       this._type,
@@ -247,4 +307,16 @@ export class Buffer extends GraphicsResource {
     super._onDestroy();
     this._platformBuffer.destroy();
   }
+}
+
+/**
+ * @internal
+ */
+class Area implements IPoolElement {
+  constructor(
+    public offset: number = -1,
+    public size: number = 0
+  ) {}
+
+  dispose?(): void {}
 }
