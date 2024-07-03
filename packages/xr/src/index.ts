@@ -4,10 +4,11 @@ import "./XRManagerExtended";
 export { XRPose } from "./XRPose";
 // xr feature
 export { XRFeature } from "./feature/XRFeature";
+// component
+export { XRTrackedObjectManager } from "./component/XRTrackedObjectManager";
+export { TrackedComponent } from "./component/TrackedComponent";
 // camera
 export { XRCameraManager } from "./feature/camera/XRCameraManager";
-export { XRTracked } from "./feature/trackable/XRTracked";
-export { XRTrackableFeature } from "./feature/trackable/XRTrackableFeature";
 // hitTest
 export { TrackableType } from "./feature/hitTest/TrackableType";
 export { XRHitResult } from "./feature/hitTest/XRHitResult";
