@@ -6,7 +6,7 @@ export { XRPose } from "./XRPose";
 export { XRFeature } from "./feature/XRFeature";
 // component
 export { XRTrackedObjectManager } from "./component/XRTrackedObjectManager";
-export { TrackedComponent } from "./component/TrackedComponent";
+export { XRTrackedComponent as TrackedComponent } from "./component/XRTrackedComponent";
 // camera
 export { XRCameraManager } from "./feature/camera/XRCameraManager";
 // hitTest
@@ -41,3 +41,7 @@ export { XRFeatureType } from "./feature/XRFeatureType";
 export { XRRequestTrackingState } from "./feature/trackable/XRRequestTrackingState";
 export { XRInputEventType } from "./input/XRInputEventType";
 export { XRTargetRayMode } from "./input/XRTargetRayMode";
+
+export * from "./loader/XRCustomParser";
+export * from "./loader/XRReferenceImageDecoder";
+export * from "./loader/XRReferenceImageLoader";

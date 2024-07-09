@@ -1,6 +1,6 @@
 import { Engine } from "@galacean/engine-core";
 import { BufferReader } from "./utils/BufferReader";
-import { decoderMap, decoder } from "./utils/Decorator";
+import { decoderMap } from "./utils/Decorator";
 import { FileHeader } from "./utils/FileHeader";
 
 export { MeshDecoder } from "./resources/mesh/MeshDecoder";
@@ -27,6 +27,12 @@ export function decode<T>(arrayBuffer: ArrayBuffer, engine: Engine): Promise<T> 
 
 export * from "./resources/schema";
 export * from "./resources/scene/SceneParser";
+export * from "./resources/scene/SceneParserContext";
 export * from "./resources/scene/MeshLoader";
 export * from "./resources/scene/EditorTextureLoader";
 export * from "./resources/parser/ParserContext";
+export * from "./resources/parser/CustomParser";
+
+export * from "./utils/BufferReader";
+export * from "./utils/Decorator";
+export * from "./utils/FileHeader";

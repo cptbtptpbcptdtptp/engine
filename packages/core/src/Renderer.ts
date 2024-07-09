@@ -354,6 +354,7 @@ export class Renderer extends Component implements IComponentCustomClone {
     this._addResourceReferCount(this.shaderData, -1);
 
     const materials = this._materials;
+    // 6
     for (let i = 0, n = materials.length; i < n; i++) {
       const material = materials[i];
       material && this._addResourceReferCount(material, -1);

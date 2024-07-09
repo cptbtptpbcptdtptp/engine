@@ -1,6 +1,9 @@
 import { Entity, Script, XRManager } from "@galacean/engine";
-import { XRFeature, XRTrackableFeature, XRTracked } from "@galacean/engine-xr";
-import { TrackedComponent } from "./TrackedComponent";
+import { XRFeature } from "../feature/XRFeature";
+import { XRTrackableFeature } from "../feature/trackable/XRTrackableFeature";
+import { XRTracked } from "../feature/trackable/XRTracked";
+import { XRSessionState } from "../session/XRSessionState";
+import { XRTrackedComponent } from "./XRTrackedComponent";
 
 /**
  * 被追踪到的所有对象
@@ -9,7 +12,7 @@ export class XRTrackedObjectManager<T extends XRTracked> extends Script {
   private _prefab: Entity;
   private _trackIdToIndex: number[] = [];
   private _feature: TFeatureConstructor<XRTrackableFeature>;
-  private _trackedComponents: Array<TrackedComponent<T>> = [];
+  private _trackedComponents: Array<XRTrackedComponent<T>> = [];
 
   get prefab(): Entity {
     return this._prefab;
@@ -19,36 +22,44 @@ export class XRTrackedObjectManager<T extends XRTracked> extends Script {
     this._prefab = value;
   }
 
-  override onAwake(): void {
-    const { engine } = this;
-    this._onXRSessionInit = this._onXRSessionInit.bind(this);
-    this._onXRSessionExit = this._onXRSessionExit.bind(this);
-    engine.on("XRSessionInit", this._onXRSessionInit);
-    engine.on("XRSessionExit", this._onXRSessionExit);
+  getTrackedComponentByTrackId(trackId: number): XRTrackedComponent<T> {
+    const index = this._trackIdToIndex[trackId];
+    return index !== undefined ? this._trackedComponents[index] : undefined;
   }
 
   constructor(entity: Entity, feature: TFeatureConstructor<XRTrackableFeature>) {
     super(entity);
     this._feature = feature;
+    this._onXRSessionInit = this._onXRSessionInit.bind(this);
+    this._onXRSessionExit = this._onXRSessionExit.bind(this);
+  }
+
+  override onEnable(): void {
+    const { engine } = this;
+    engine.on("XRSessionInit", this._onXRSessionInit);
+    engine.on("XRSessionExit", this._onXRSessionExit);
+    if (engine.xrManager?.sessionManager.state !== XRSessionState.None) {
+      this._onXRSessionInit();
+    }
+  }
+
+  override onDisable(): void {
+    const { engine } = this;
+    engine.off("XRSessionInit", this._onXRSessionInit);
+    engine.off("XRSessionExit", this._onXRSessionExit);
+    this._onXRSessionExit();
   }
 
   private _onXRSessionInit(): void {
-    const { _feature: feature } = this;
-    if (!feature) return;
-    // @ts-ignore
-    this._engine.xrManager.getFeature(feature)?.addChangedListener(this._onChanged);
+    const feature = this._engine.xrManager.getFeature(this._feature);
+    if (!feature) {
+      throw new Error(`Feature not found.`);
+    }
+    feature.addChangedListener(this._onChanged);
   }
 
   private _onXRSessionExit(): void {
-    const { _feature: feature } = this;
-    if (!feature) return;
-    // @ts-ignore
-    this._engine.xrManager.getFeature(feature)?.removeChangedListener(this._onChanged);
-  }
-
-  getTrackedComponentByTrackId(trackId: number): TrackedComponent<T> {
-    const index = this._trackIdToIndex[trackId];
-    return index !== undefined ? this._trackedComponents[index] : undefined;
+    this._engine.xrManager.getFeature(this._feature)?.removeChangedListener(this._onChanged);
   }
 
   private _onChanged(added: readonly T[], updated: readonly T[], removed: readonly T[]) {
@@ -84,34 +95,34 @@ export class XRTrackedObjectManager<T extends XRTracked> extends Script {
     }
   }
 
-  private _createOrUpdateTrackedComponents(sessionRelativeData: T): TrackedComponent<T> {
-    let trackedComponent = this.getTrackedComponentByTrackId(sessionRelativeData.id);
+  private _createOrUpdateTrackedComponents(trackedData: T): XRTrackedComponent<T> {
+    let trackedComponent = this.getTrackedComponentByTrackId(trackedData.id);
     if (!trackedComponent) {
       const { _trackIdToIndex: trackIdToIndex, _trackedComponents: trackedComponents } = this;
-      trackedComponent = this._createTrackedComponents(sessionRelativeData);
-      trackIdToIndex[sessionRelativeData.id] = trackedComponents.length;
+      trackedComponent = this._createTrackedComponents(trackedData);
+      trackIdToIndex[trackedData.id] = trackedComponents.length;
       trackedComponents.push(trackedComponent);
     }
-    trackedComponent.data = sessionRelativeData;
+    trackedComponent.data = trackedData;
     const { transform } = trackedComponent.entity;
-    const { pose } = sessionRelativeData;
+    const { pose } = trackedData;
     transform.position = pose.position;
     transform.rotationQuaternion = pose.rotation;
     return trackedComponent;
   }
 
-  private _createTrackedComponents(sessionRelativeData: T): TrackedComponent<T> {
+  private _createTrackedComponents(trackedData: T): XRTrackedComponent<T> {
     const { origin } = this._engine.xrManager;
     const { _prefab: prefab } = this;
     let entity: Entity;
     if (prefab) {
       entity = prefab.clone();
-      entity.name = `TrackedObject${sessionRelativeData.id}`;
+      entity.name = `TrackedObject${trackedData.id}`;
       origin.addChild(entity);
     } else {
-      entity = origin.createChild(`TrackedObject${sessionRelativeData.id}`);
+      entity = origin.createChild(`TrackedObject${trackedData.id}`);
     }
-    const trackedComponent = entity.addComponent(TrackedComponent<T>);
+    const trackedComponent = entity.addComponent(XRTrackedComponent<T>);
     return trackedComponent;
   }
 }

@@ -1,7 +1,7 @@
 import { Engine, Scene } from "@galacean/engine-core";
+import HierarchyParser from "../parser/HierarchyParser";
 import type { IScene } from "../schema";
 import { SceneParserContext } from "./SceneParserContext";
-import HierarchyParser from "../parser/HierarchyParser";
 
 /** @Internal */
 export class SceneParser extends HierarchyParser<Scene, SceneParserContext> {
@@ -11,12 +11,12 @@ export class SceneParser extends HierarchyParser<Scene, SceneParserContext> {
    * @param sceneData - scene data which is exported by editor
    * @returns a promise of scene
    */
-  static parse(engine: Engine, sceneData: IScene): Promise<Scene> {
+  static parse(engine: Engine, sceneData: IScene): Promise<SceneParserContext> {
     const scene = new Scene(engine);
     const context = new SceneParserContext(sceneData, engine, scene);
     const parser = new SceneParser(context);
     parser.start();
-    return parser.promise;
+    return parser.promise.then(() => context);
   }
 
   protected override handleRootEntity(id: string): void {

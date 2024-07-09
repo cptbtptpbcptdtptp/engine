@@ -1,7 +1,7 @@
 import { Script } from "@galacean/engine";
 import { XRTracked } from "../feature/trackable/XRTracked";
 
-export class TrackedComponent<T extends XRTracked> extends Script {
+export class XRTrackedComponent<T extends XRTracked> extends Script {
   private _data: T;
   private _destroyedOnRemoval = true;
 

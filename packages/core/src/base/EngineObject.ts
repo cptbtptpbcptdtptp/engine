@@ -4,7 +4,7 @@ import { Engine } from "../Engine";
 /**
  * EngineObject.
  */
-export abstract class EngineObject {
+export abstract class -EngineObject {
   private static _instanceIdCounter: number = 0;
 
   /** Engine unique id. */

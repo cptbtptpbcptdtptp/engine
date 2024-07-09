@@ -25,6 +25,7 @@ export class WebXRDevice implements IXRDevice {
   }
 
   isSupportedFeature(type: XRFeatureType): boolean {
+    return true;
     switch (type) {
       case XRFeatureType.HitTest:
       case XRFeatureType.PlaneTracking:

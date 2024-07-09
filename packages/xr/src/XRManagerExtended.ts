@@ -64,7 +64,7 @@ export class XRManagerExtended extends XRManager {
     if (this.sessionManager._platformSession) {
       throw new Error("Cannot add feature when the session is initialized.");
     }
-    const { _features: features, _platformDevice: platformDevice } = this;
+    const { _features: features } = this;
     if (!this._platformDevice.isSupportedFeature(XRManagerExtended._featureMap.get(type))) {
       throw new Error("The feature is not supported");
     }
@@ -314,7 +314,7 @@ declare module "@galacean/engine" {
     addFeature<T extends new (xrManager: XRManagerExtended, ...args: any[]) => XRFeature>(
       type: T,
       ...args: TFeatureConstructorArguments<T>
-    ): XRFeature | null;
+    ): InstanceType<T> | null;
 
     /**
      * Get feature which match the type.

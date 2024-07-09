@@ -13,6 +13,8 @@ import {
   Scene
 } from "@galacean/engine-core";
 import { IClassObject, IScene, ReflectionParser, SceneParser, SpecularMode } from "./resource-deserialize";
+import { SceneParserContext } from "./resource-deserialize/resources/scene/SceneParserContext";
+import { customParsers } from ".";
 
 @resourceLoader(AssetType.Scene, ["scene"], true)
 class SceneLoader extends Loader<Scene> {
@@ -21,7 +23,8 @@ class SceneLoader extends Loader<Scene> {
     return new AssetPromise((resolve, reject) => {
       this.request<IScene>(item.url, { type: "json" })
         .then((data) => {
-          return SceneParser.parse(engine, data).then((scene) => {
+          return SceneParser.parse(engine, data).then((sceneParserContext: SceneParserContext) => {
+            const scene = sceneParserContext.scene;
             const promises = [];
             // parse ambient light
             const ambient = data.scene.ambient;
@@ -118,6 +121,10 @@ class SceneLoader extends Loader<Scene> {
               if (fog.fogDensity != undefined) scene.fogDensity = fog.fogDensity;
               if (fog.fogColor != undefined) scene.fogColor.copyFrom(fog.fogColor);
             }
+
+            customParsers.forEach((parser) => {
+              promises.push(parser.onSceneParse(engine, sceneParserContext, data));
+            });
 
             return Promise.all(promises).then(() => {
               resolve(scene);

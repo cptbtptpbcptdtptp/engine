@@ -3,7 +3,7 @@ import { IXRReferenceImage } from "@galacean/engine-design";
 /**
  *  A reference image is an image to look for in the physical environment.
  */
-export class XRReferenceImage implements IXRReferenceImage {
+export class XRReferenceImage implements IXRReferenceImage{
   /**
    * Create a reference image.
    * @param name - The name of the image to be tracked
