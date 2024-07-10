@@ -12,6 +12,7 @@ import {
 } from "@galacean/engine";
 import { XRFeatureType } from "../feature/XRFeatureType";
 import { XRCameraManager } from "../feature/camera/XRCameraManager";
+import { XRHitTest } from "../feature/hitTest/XRHitTest";
 import { XRAnchorTracking } from "../feature/trackable/anchor/XRAnchorTracking";
 import { XRImageTracking } from "../feature/trackable/image/XRImageTracking";
 import { XRReferenceImage } from "../feature/trackable/image/XRReferenceImage";
@@ -24,7 +25,6 @@ import {
   IPlaneTrackingSchema,
   IXRScene
 } from "./IXRScene";
-import { XRHitTest } from "../feature/hitTest/XRHitTest";
 
 @registerCustomParser("XR")
 export class XRCustomParser extends CustomParser {
