@@ -5,8 +5,7 @@ export { XRPose } from "./XRPose";
 // xr feature
 export { XRFeature } from "./feature/XRFeature";
 // component
-export { XRTrackedObjectManager } from "./component/XRTrackedObjectManager";
-export { XRTrackedComponent as TrackedComponent } from "./component/XRTrackedComponent";
+export { XRTrackedComponent } from "./component/XRTrackedComponent";
 // camera
 export { XRCameraManager } from "./feature/camera/XRCameraManager";
 // hitTest
