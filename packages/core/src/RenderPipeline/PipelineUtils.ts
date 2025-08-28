@@ -85,34 +85,36 @@ export class PipelineUtils {
     textureFilterMode: TextureFilterMode
   ): RenderTarget {
     const currentColorTexture = <Texture2D>currentRenderTarget?.getColorTexture(0);
+    console.log("PipelineUtils.recreateRenderTargetIfNeeded0")
     const colorTexture = colorFormat
       ? PipelineUtils.recreateTextureIfNeeded(
+        engine,
+        currentColorTexture,
+        width,
+        height,
+        colorFormat,
+        mipmap,
+        isSRGBColorSpace,
+        textureWrapMode,
+        textureFilterMode
+      )
+      : null;
+    console.log("PipelineUtils.recreateRenderTargetIfNeeded1")
+    if (needDepthTexture) {
+      console.log("PipelineUtils.recreateRenderTargetIfNeeded2")
+      const currentDepthTexture = <Texture2D>currentRenderTarget?.depthTexture;
+      const needDepthTexture = depthFormat
+        ? PipelineUtils.recreateTextureIfNeeded(
           engine,
-          currentColorTexture,
+          currentDepthTexture,
           width,
           height,
-          colorFormat,
+          depthFormat,
           mipmap,
           isSRGBColorSpace,
           textureWrapMode,
           textureFilterMode
         )
-      : null;
-
-    if (needDepthTexture) {
-      const currentDepthTexture = <Texture2D>currentRenderTarget?.depthTexture;
-      const needDepthTexture = depthFormat
-        ? PipelineUtils.recreateTextureIfNeeded(
-            engine,
-            currentDepthTexture,
-            width,
-            height,
-            depthFormat,
-            mipmap,
-            isSRGBColorSpace,
-            textureWrapMode,
-            textureFilterMode
-          )
         : null;
 
       if (currentColorTexture !== colorTexture || currentDepthTexture !== needDepthTexture) {
@@ -120,16 +122,22 @@ export class PipelineUtils {
         currentRenderTarget = new RenderTarget(engine, width, height, colorTexture, needDepthTexture, antiAliasing);
         currentRenderTarget.isGCIgnored = true;
       }
+      console.log("PipelineUtils.recreateRenderTargetIfNeeded3")
     } else {
+      console.log("PipelineUtils.recreateRenderTargetIfNeeded4")
       if (
         currentColorTexture !== colorTexture ||
         currentRenderTarget?._depthFormat !== depthFormat ||
         currentRenderTarget.antiAliasing !== antiAliasing
       ) {
+        console.log("PipelineUtils.recreateRenderTargetIfNeeded5")
         currentRenderTarget?.destroy(true);
+        console.log("PipelineUtils.recreateRenderTargetIfNeeded6")
         currentRenderTarget = new RenderTarget(engine, width, height, colorTexture, depthFormat, antiAliasing);
+        console.log("PipelineUtils.recreateRenderTargetIfNeeded7")
         currentRenderTarget.isGCIgnored = true;
       }
+      console.log("PipelineUtils.recreateRenderTargetIfNeeded8")
     }
 
     return currentRenderTarget;

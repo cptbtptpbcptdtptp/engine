@@ -630,6 +630,7 @@ export class Camera extends Component {
     return this.viewportPointToRay(viewportPoint, out);
   }
 
+  private _first = true;
   /**
    * Manually call the rendering of the camera.
    * @param cubeFace - Cube rendering surface collection
@@ -672,11 +673,20 @@ export class Camera extends Component {
       mipLevel = 0;
       Logger.error("mipLevel only take effect in WebGL2.0");
     }
+
     let ignoreClearFlags: CameraClearFlags;
     if (this._cameraType !== CameraType.Normal && !this._renderTarget && !this._isIndependentCanvasEnabled()) {
       ignoreClearFlags = engine.xrManager._getCameraIgnoreClearFlags(this._cameraType);
     }
-    this._renderPipeline.render(context, cubeFace, mipLevel, ignoreClearFlags);
+    if (this._first) {
+      console.log('camera.renderer1');
+      this._first = false;
+    }
+    try {
+      this._renderPipeline.render(context, cubeFace, mipLevel, ignoreClearFlags);
+    } catch (error) {
+      console.log(error.message);
+    }
     engine._renderCount++;
     context.camera = null;
   }

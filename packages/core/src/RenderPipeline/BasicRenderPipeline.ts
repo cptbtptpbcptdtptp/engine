@@ -92,7 +92,7 @@ export class BasicRenderPipeline {
     const depthPassEnabled = camera.depthTextureMode === DepthTextureMode.PrePass && depthOnlyPass._supportDepthTexture;
     const finalClearFlags = camera.clearFlags & ~(ignoreClear ?? CameraClearFlags.None);
     const msaaSamples = renderTarget ? renderTarget.antiAliasing : camera.msaaSamples;
-
+    console.log('BasicRenderPipeline.render')
     // Check whether can use `blitFramebuffer` to blit internal render target, source maybe screen canvas or camera's render target
     // Our screen canvas's anti-aliasing is always disable, so blit source and dest is always same by below rules:
     // 1. Only support blitFramebuffer in webgl2 context
@@ -130,9 +130,10 @@ export class BasicRenderPipeline {
     } else {
       camera.shaderData.setTexture(Camera._cameraDepthTextureProperty, engine._basicResources.whiteTexture2D);
     }
-
+    console.log('BasicRenderPipeline.render2')
     // Check if need to create internal color texture or grab texture
     if (independentCanvasEnabled) {
+      console.log('BasicRenderPipeline.render3')
       let depthFormat: TextureFormat;
       if (camera.renderTarget) {
         depthFormat = camera.renderTarget._depthFormat;
@@ -146,6 +147,7 @@ export class BasicRenderPipeline {
         depthFormat = null;
       }
       const viewport = camera.pixelViewport;
+      console.log('BasicRenderPipeline.render4')
       const internalColorTarget = PipelineUtils.recreateRenderTargetIfNeeded(
         engine,
         this._internalColorTarget,
@@ -160,8 +162,9 @@ export class BasicRenderPipeline {
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear
       );
-
+      console.log('BasicRenderPipeline.render5')
       if (this._shouldCopyBackgroundColor) {
+         console.log('BasicRenderPipeline.render6')
         const colorTexture = camera.renderTarget?.getColorTexture(0);
         const copyBackgroundTexture = PipelineUtils.recreateTextureIfNeeded(
           engine,
@@ -176,9 +179,10 @@ export class BasicRenderPipeline {
         );
         this._copyBackgroundTexture = copyBackgroundTexture;
       }
-
+      console.log('BasicRenderPipeline.render7')
       this._internalColorTarget = internalColorTarget;
     } else {
+      console.log('BasicRenderPipeline.render8')
       const internalColorTarget = this._internalColorTarget;
       const copyBackgroundTexture = this._copyBackgroundTexture;
       if (internalColorTarget) {
@@ -202,6 +206,7 @@ export class BasicRenderPipeline {
     cubeFace?: TextureCubeFace,
     mipLevel?: number
   ) {
+    console.log('BasicRenderPipeline._drawRenderPass')
     const cullingResults = this._cullingResults;
     const { opaqueQueue, alphaTestQueue, transparentQueue } = cullingResults;
 

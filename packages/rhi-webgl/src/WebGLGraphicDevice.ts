@@ -53,6 +53,9 @@ export enum WebGLMode {
  * WebGL graphic device options.
  */
 export interface WebGLGraphicDeviceOptions {
+  /** GL context. */
+  context?: (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext;
+
   /** WebGL mode.*/
   webGLMode?: WebGLMode;
 
@@ -198,8 +201,18 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
     const webCanvas = (canvas as WebCanvas)._webCanvas;
     const webGLMode = this._options.webGLMode;
 
+    this._webCanvas = webCanvas;
     this._onDeviceLost = onDeviceLost;
     this._onDeviceRestored = onDeviceRestored;
+
+    // If external context is provided, reuse it and skip context creation & event binding on fake canvas
+    const externalGL = this._options.context as (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext | undefined;
+    if (externalGL) {
+      this._gl = externalGL;
+      this._isWebGL2 = externalGL instanceof WebGL2RenderingContext;
+      this._initGLState(externalGL);
+      return;
+    }
     webCanvas.addEventListener("webglcontextlost", this._onWebGLContextLost, false);
     webCanvas.addEventListener("webglcontextrestored", this._onWebGLContextRestored, false);
     webCanvas.addEventListener("webglcontextcreationerror", this._onContextCreationError, false);
@@ -215,7 +228,7 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
       }
       this._isWebGL2 = true;
 
-      // Prevent weird browsers to lie (such as safari!)ƒ
+      // Prevent weird browsers to lie (such as safari!)
       if (gl && !(<WebGL2RenderingContext>gl).deleteQuery) {
         this._isWebGL2 = false;
       }
@@ -355,8 +368,10 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
   }
 
   drawPrimitive(primitive: GLPrimitive, subPrimitive: SubMesh, shaderProgram: any) {
+    console.log('WebglGraphicDevice.drawPrimitive0')
     // todo: VAO not support morph animation
     if (primitive) {
+      console.log('WebglGraphicDevice.drawPrimitive1')
       primitive.draw(shaderProgram, subPrimitive);
     } else {
       Logger.error("draw primitive failed.");
