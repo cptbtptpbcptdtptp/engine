@@ -10,10 +10,10 @@ export class WebXRDevice implements IXRDevice {
 
   isSupportedSessionMode(mode: XRSessionMode): Promise<void> {
     return new Promise((resolve, reject: (reason: Error) => void) => {
-      if (!window.isSecureContext) {
-        reject(new Error("WebXR is available only in secure contexts (HTTPS)."));
-        return;
-      }
+      // if (!window.isSecureContext) {
+      //   reject(new Error("WebXR is available only in secure contexts (HTTPS)."));
+      //   return;
+      // }
       if (!navigator.xr) {
         reject(new Error("WebXR isn't available"));
         return;
@@ -79,6 +79,8 @@ export class WebXRDevice implements IXRDevice {
                 layers: [layer]
               });
             }
+            // @ts-ignore
+            console.log('layer.multiviewRequired', layer.multiviewRequired);
             session.requestReferenceSpace("local").then((referenceSpace: XRReferenceSpace) => {
               resolve(new WebXRSession(session, layer, referenceSpace));
             }, reject);

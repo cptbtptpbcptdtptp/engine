@@ -27,6 +27,7 @@ import { ShaderDataGroup } from "./shader/enums/ShaderDataGroup";
 import { TextureFormat } from "./texture";
 import { RenderTarget } from "./texture/RenderTarget";
 import { TextureCubeFace } from "./texture/enums/TextureCubeFace";
+import { ShaderMacro } from "./shader";
 
 class MathTemp {
   static tempVec4 = new Vector4();
@@ -41,6 +42,8 @@ class MathTemp {
 @dependentComponents(Transform, DependentMode.CheckOnly)
 export class Camera extends Component {
   /** @internal */
+  static _multiviewMacro = ShaderMacro.getByName("camera_MultiView");
+  /** @internal */
   static _cameraDepthTextureProperty = ShaderProperty.getByName("camera_DepthTexture");
   /** @internal */
   static _cameraOpaqueTextureProperty = ShaderProperty.getByName("camera_OpaqueTexture");
@@ -53,6 +56,8 @@ export class Camera extends Component {
 
   /** Whether to enable frustum culling, it is enabled by default. */
   enableFrustumCulling: boolean = true;
+  /** Whether to enable multi-view rendering. */
+  enableMultiView: boolean = false;
 
   /**
    * Determining what to clear when rendering by a Camera.
@@ -656,6 +661,7 @@ export class Camera extends Component {
 
     // compute cull frustum.
     if (this.enableFrustumCulling && this._frustumChangeFlag.flag) {
+      // @todo: Need merge the frustums of the two eyes?
       this._frustum.calculateFromMatrix(virtualCamera.viewProjectionMatrix);
       this._frustumChangeFlag.flag = false;
     }
@@ -678,10 +684,7 @@ export class Camera extends Component {
     if (this._cameraType !== CameraType.Normal && !this._renderTarget && !this._isIndependentCanvasEnabled()) {
       ignoreClearFlags = engine.xrManager._getCameraIgnoreClearFlags(this._cameraType);
     }
-    if (this._first) {
-      console.log('camera.renderer1');
-      this._first = false;
-    }
+    console.log('camera.rendererStart');
     try {
       this._renderPipeline.render(context, cubeFace, mipLevel, ignoreClearFlags);
     } catch (error) {
@@ -689,6 +692,7 @@ export class Camera extends Component {
     }
     engine._renderCount++;
     context.camera = null;
+    console.log('camera.rendererEnd');
   }
 
   /**
@@ -797,7 +801,8 @@ export class Camera extends Component {
    */
   _needFinalPass(): boolean {
     // FXAA or sRGB conversion when camera render to screen
-    return this.antiAliasing === AntiAliasing.FXAA || !this._renderTarget;
+    // return this.antiAliasing === AntiAliasing.FXAA || !this._renderTarget;
+    return false;
   }
 
   /**
@@ -909,7 +914,7 @@ export class Camera extends Component {
     return out;
   }
 
-  private _updateShaderData(): void {
+  protected _updateShaderData(): void {
     const shaderData = this.shaderData;
 
     const transform = this._entity.transform;

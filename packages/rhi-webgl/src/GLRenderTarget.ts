@@ -173,7 +173,6 @@ export class GLRenderTarget implements IPlatformRenderTarget {
    */
   blitRenderTarget(): void {
     if (!this._MSAAFrameBuffer) return;
-
     const gl = this._gl;
     const mask = gl.COLOR_BUFFER_BIT | (this._target.depthTexture ? gl.DEPTH_BUFFER_BIT : 0);
     const { colorTextureCount, width, height } = this._target;
@@ -281,17 +280,14 @@ export class GLRenderTarget implements IPlatformRenderTarget {
   }
 
   private _bindMSAAFBO(): void {
-    console.log('GLRenderTarget._bindMSAAFBO0')
     const gl = this._gl;
     const isWebGL2 = this._isWebGL2;
     const MSAADepthRenderBuffer = gl.createRenderbuffer();
-    console.log('GLRenderTarget._bindMSAAFBO1')
     /** @ts-ignore */
     const { _depth, colorTextureCount, antiAliasing, width, height } = this._target;
 
     this._blitDrawBuffers = new Array(colorTextureCount);
     this._MSAADepthRenderBuffer = MSAADepthRenderBuffer;
-    console.log('GLRenderTarget._bindMSAAFBO2')
     gl.bindFramebuffer(gl.FRAMEBUFFER, this._MSAAFrameBuffer);
 
     // prepare MRT+MSAA color RBOs
@@ -313,7 +309,6 @@ export class GLRenderTarget implements IPlatformRenderTarget {
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.RENDERBUFFER, MSAAColorRenderBuffer);
     }
     gl.drawBuffers(this._oriDrawBuffers);
-    console.log('GLRenderTarget._bindMSAAFBO3')
     // prepare MSAA depth RBO
     if (_depth !== null) {
       const { internalFormat, attachment } =
@@ -326,9 +321,7 @@ export class GLRenderTarget implements IPlatformRenderTarget {
       gl.renderbufferStorageMultisample(gl.RENDERBUFFER, antiAliasing, internalFormat, width, height);
       gl.framebufferRenderbuffer(gl.FRAMEBUFFER, attachment, gl.RENDERBUFFER, MSAADepthRenderBuffer);
     }
-    console.log('GLRenderTarget._bindMSAAFBO4')
     this._checkFrameBuffer();
-    console.log('GLRenderTarget._bindMSAAFBO5')
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindRenderbuffer(gl.RENDERBUFFER, null);
   }

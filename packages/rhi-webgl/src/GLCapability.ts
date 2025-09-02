@@ -11,6 +11,7 @@ export class GLCapability {
   private _maxDrawBuffers: number;
   private _maxAnisoLevel: number;
   private _maxAntiAliasing: number;
+  private _maxViewsOVR: number;
 
   _rhi: WebGLGraphicDevice;
   capabilityList: Map<GLCapabilityType, boolean>;
@@ -70,6 +71,21 @@ export class GLCapability {
       this._maxAntiAliasing = canMSAA ? gl.getParameter(gl.MAX_SAMPLES) : 1;
     }
     return this._maxAntiAliasing;
+  }
+
+  /**
+   * Max views.
+   */
+  get maxViewsOVR(): number {
+    if (!this._maxViewsOVR) {
+      const gl = this._rhi.gl;
+      if (this.canIUse(GLCapabilityType.multiview)) {
+        this._maxViewsOVR = gl.getParameter(gl.MAX_VIEWS_OVR);
+      } else {
+        this._maxViewsOVR = 1;
+      }
+    }
+    return this._maxViewsOVR;
   }
 
   get rhi() {
@@ -179,7 +195,8 @@ export class GLCapability {
       textureFilterAnisotropic,
       fragDepth,
 
-      sRGB
+      sRGB,
+      multiview
     } = GLCapabilityType;
     cap.set(shaderVertexID, isWebGL2);
     cap.set(standardDerivatives, isWebGL2 || !!requireExtension(standardDerivatives));
@@ -215,6 +232,8 @@ export class GLCapability {
     cap.set(bptc, !!requireExtension(bptc));
 
     cap.set(sRGB, isWebGL2 || !!requireExtension(sRGB));
+
+    cap.set(GLCapabilityType.multiview, isWebGL2 || !!requireExtension(multiview));
   }
 
   /**

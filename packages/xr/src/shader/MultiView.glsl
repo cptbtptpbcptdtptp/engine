@@ -1,0 +1,7 @@
+#ifdef ENABLE_OVR_MULTIVIRW2
+uniform sampler2D material_BloomTexture;
+uniform sampler2D material_BloomDirtTexture;
+uniform vec4 material_BloomTint;
+uniform vec4 material_BloomDirtTilingOffset;
+uniform vec4 material_BloomIntensityParams;
+#endif

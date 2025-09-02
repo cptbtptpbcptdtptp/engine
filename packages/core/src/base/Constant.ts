@@ -124,7 +124,8 @@ export enum GLCapabilityType {
 
   WEBGL_lose_context = "WEBGL_lose_context",
 
-  sRGB = "EXT_sRGB"
+  sRGB = "EXT_sRGB",
+  multiview = "OVR_multiview2"
 }
 
 export type TypedArray =

@@ -22,6 +22,7 @@ export class WebXRFrame implements IXRFrame {
     for (let i = 0, n = inputSources.length; i < n; i++) {
       const inputSource = inputSources[i];
       const type = getInputSource(inputSource);
+      if (type === XRTrackedInputDevice.Undefined) continue;
       const input = <IXRController>inputs[type];
       switch (inputSource.targetRayMode) {
         case "screen":
@@ -31,9 +32,11 @@ export class WebXRFrame implements IXRFrame {
             const { transform, emulatedPosition } = frame.getPose(gripSpace, referenceSpace);
             if (transform) {
               const { gripPose } = input;
-              gripPose.matrix.copyFromArray(transform.matrix);
-              gripPose.position.copyFrom(transform.position);
-              gripPose.rotation.copyFrom(transform.orientation);
+              if (gripPose) {
+                gripPose.matrix.copyFromArray(transform.matrix);
+                gripPose.position.copyFrom(transform.position);
+                gripPose.rotation.copyFrom(transform.orientation);
+              }
             }
             input.trackingState = emulatedPosition ? XRTrackingState.TrackingLost : XRTrackingState.Tracking;
           }
@@ -49,6 +52,7 @@ export class WebXRFrame implements IXRFrame {
           }
           break;
         case "gaze":
+          // @todo: supported gaze mode.
           break;
         default:
           break;

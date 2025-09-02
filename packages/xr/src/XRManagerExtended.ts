@@ -1,12 +1,13 @@
-import { CameraClearFlags, CameraType, Engine, Entity, XRManager } from "@galacean/engine";
+import { Camera, CameraClearFlags, CameraType, Engine, Entity, XRManager } from "@galacean/engine";
 import { IXRDevice } from "@galacean/engine-design";
+import { XRCameraManager } from "./feature/camera/XRCameraManager";
 import { XRFeature } from "./feature/XRFeature";
 import { XRFeatureType } from "./feature/XRFeatureType";
-import { XRCameraManager } from "./feature/camera/XRCameraManager";
 import { XRInputManager } from "./input/XRInputManager";
 import { XRSessionManager } from "./session/XRSessionManager";
 import { XRSessionMode } from "./session/XRSessionMode";
 import { XRSessionState } from "./session/XRSessionState";
+import { XRStereoRenderMode } from "./XRStereoRenderMode";
 /**
  * @internal
  */
@@ -17,6 +18,8 @@ export class XRManagerExtended extends XRManager {
   override inputManager: XRInputManager;
   override sessionManager: XRSessionManager;
   override cameraManager: XRCameraManager;
+
+  private _stereoRenderMode: XRStereoRenderMode = XRStereoRenderMode.MultiPass;
 
   /** @internal */
   _platformDevice: IXRDevice;
@@ -37,6 +40,15 @@ export class XRManagerExtended extends XRManager {
       throw new Error("Cannot set origin when the session is initialized.");
     }
     this._origin = value;
+  }
+
+  override get stereoRenderMode(): XRStereoRenderMode {
+    return this._stereoRenderMode;
+  }
+
+  override set stereoRenderMode(value: XRStereoRenderMode) {
+    this._stereoRenderMode = value;
+    this.cameraManager._onStereoRenderModeChange(value);
   }
 
   override isSupportedFeature<T extends XRFeature>(feature: TFeatureConstructor<T>): boolean {
@@ -216,7 +228,29 @@ type TFeatureConstructor<T extends XRFeature> = new (xrManager: XRManagerExtende
 type TFeatureConstructorArguments<T extends new (xrManager: XRManagerExtended, ...args: any[]) => XRFeature> =
   T extends new (xrManager: XRManagerExtended, ...args: infer P) => XRFeature ? P : never;
 
+export class CameraExtension {
+  private _enableMultiView: boolean = false;
+
+  get enableMultiView(): boolean {
+    return this._enableMultiView;
+  }
+
+  set enableMultiView(value: boolean) {
+    if (this._enableMultiView !== value) {
+      this._enableMultiView = value;
+    }
+  }
+}
+
+
 declare module "@galacean/engine" {
+
+  interface Camera {
+    /** Whether to enable multi-view rendering. */
+    get enableMultiView(): boolean;
+    set enableMultiView(value: boolean);
+  }
+
   interface XRManager {
     /** Input manager for XR. */
     inputManager: XRInputManager;
@@ -234,6 +268,12 @@ declare module "@galacean/engine" {
      */
     get origin(): Entity;
     set origin(value: Entity);
+
+    /**
+     * The stereo render mode of XR.
+     */
+    get stereoRenderMode(): XRStereoRenderMode;
+    set stereoRenderMode(value: XRStereoRenderMode);
 
     /**
      * Check if the specified feature is supported.
@@ -318,3 +358,5 @@ function ApplyMixins(derivedCtor: any, baseCtors: any[]): void {
 }
 
 ApplyMixins(XRManager, [XRManagerExtended]);
+ApplyMixins(Camera, [CameraExtension]);
+

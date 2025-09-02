@@ -1,4 +1,5 @@
 import { Shader, ShaderPlatformTarget } from ".";
+import { Camera } from "../Camera";
 import { Engine } from "../Engine";
 import { PipelineStage } from "../RenderPipeline/enums/PipelineStage";
 import { Logger } from "../base";
@@ -207,8 +208,11 @@ export class ShaderPass extends ShaderPart {
     const macroNameList = new Array<ShaderMacro>();
     ShaderMacro._getMacrosElements(macroCollection, macroNameList);
     const macroNameStr = ShaderFactory.parseCustomMacros(macroNameList);
+    let multiViewStr = "";
     const versionStr = isWebGL2 ? "#version 300 es" : "#version 100";
     const graphicAPI = isWebGL2 ? "#define GRAPHICS_API_WEBGL2" : "#define GRAPHICS_API_WEBGL1";
+    let vertexExtension = "";
+    let fragmentExtension = "";
     let precisionStr = `
     #ifdef GL_FRAGMENT_PRECISION_HIGH
       precision highp float;
@@ -225,16 +229,26 @@ export class ShaderPass extends ShaderPart {
     if (engine._hardwareRenderer.canIUse(GLCapabilityType.standardDerivatives)) {
       precisionStr += "#define HAS_DERIVATIVES\n";
     }
+    if (engine._hardwareRenderer.canIUse(GLCapabilityType.multiview) && macroCollection.isEnable(Camera._multiviewMacro)) {
+      vertexExtension += `
+        #extension GL_OVR_multiview2: enable
+        layout(num_views = 2) in;
+      `;
+    }
+    if (isWebGL2) {
+      fragmentExtension += ShaderFactory._shaderExtension;
+    }
 
     let vertexSource =
       ` ${versionStr}
         ${graphicAPI}
+        ${vertexExtension}
         ${macroNameStr}
       ` + ShaderFactory.parseIncludes(this._vertexSource);
     let fragmentSource =
       ` ${versionStr}
         ${graphicAPI}
-        ${isWebGL2 ? "" : ShaderFactory._shaderExtension}
+        ${fragmentExtension}
         ${precisionStr}
         ${macroNameStr}
       ` + ShaderFactory.parseIncludes(this._fragmentSource);

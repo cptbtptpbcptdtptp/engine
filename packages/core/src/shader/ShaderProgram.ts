@@ -261,7 +261,7 @@ export class ShaderProgram {
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
-    gl.validateProgram(program);
+    // gl.validateProgram(program);
 
     gl.deleteShader(vertexShader);
     gl.deleteShader(fragmentShader);
@@ -292,16 +292,16 @@ export class ShaderProgram {
     gl.shaderSource(shader, shaderSource);
     gl.compileShader(shader);
 
-    if (Logger.isEnabled && !gl.getShaderParameter(shader, gl.COMPILE_STATUS) && !gl.isContextLost()) {
-      console.warn(
-        `Could not compile WebGL shader\n\n` +
-          `Shader type: ${shaderType == gl.VERTEX_SHADER ? "vertex" : "fragment"}\n\n` +
-          `Shader information log:\n${gl.getShaderInfoLog(shader)}\n` +
-          `Shader source:\n${ShaderProgram._addLineNum(shaderSource)}`
-      );
-      gl.deleteShader(shader);
-      return null;
-    }
+    // if (Logger.isEnabled && !gl.getShaderParameter(shader, gl.COMPILE_STATUS) && !gl.isContextLost()) {
+    //   console.warn(
+    //     `Could not compile WebGL shader\n\n` +
+    //       `Shader type: ${shaderType == gl.VERTEX_SHADER ? "vertex" : "fragment"}\n\n` +
+    //       `Shader information log:\n${gl.getShaderInfoLog(shader)}\n` +
+    //       `Shader source:\n${ShaderProgram._addLineNum(shaderSource)}`
+    //   );
+    //   gl.deleteShader(shader);
+    //   return null;
+    // }
 
     return shader;
   }

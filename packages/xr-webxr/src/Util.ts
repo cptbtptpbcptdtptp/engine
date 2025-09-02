@@ -12,10 +12,9 @@ export function parseXRMode(mode: number): XRSessionMode | null {
 }
 
 export function getInputSource(inputSource: XRInputSource): XRTrackedInputDevice {
-  let type: number;
   switch (inputSource.targetRayMode) {
     case "gaze":
-      break;
+      return XRTrackedInputDevice.Undefined;
     case "screen":
       return XRTrackedInputDevice.Controller;
     case "tracked-pointer":
@@ -24,21 +23,24 @@ export function getInputSource(inputSource: XRInputSource): XRTrackedInputDevice
           case "left":
             return XRTrackedInputDevice.LeftHand;
           case "right":
-            return XRTrackedInputDevice.RightHand;
+            return XRTrackedInputDevice.RightHand
+          default:
+            return XRTrackedInputDevice.Undefined;
         }
       } else {
         switch (inputSource.handedness) {
           case "left":
             return XRTrackedInputDevice.LeftController;
           case "right":
-            return XRTrackedInputDevice.RightController;
+            return XRTrackedInputDevice.RightController
+          default:
+            return XRTrackedInputDevice.Undefined;
         }
       }
       break;
     default:
-      break;
+      return XRTrackedInputDevice.Undefined;
   }
-  return type;
 }
 
 export function viewToCamera(type: XREye): XRTrackedInputDevice {

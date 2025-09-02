@@ -11,6 +11,11 @@ export interface WebGLExtension {
   DEPTH_COMPONENT32F: GLenum;
   READ_FRAMEBUFFER: GLenum;
   DRAW_FRAMEBUFFER: GLenum;
+  /** Multi View. */
+  FRAMEBUFFER_ATTACHMENT_TEXTURE_NUM_VIEWS_OVR: GLenum;
+  FRAMEBUFFER_ATTACHMENT_TEXTURE_BASE_VIEW_INDEX_OVR: GLenum;
+  MAX_VIEWS_OVR: GLenum;
+  FRAMEBUFFER_INCOMPLETE_VIEW_TARGETS_OVR: GLenum;
 
   createVertexArray(): WebGLVertexArrayObject | null;
   deleteVertexArray(vertexArray: WebGLVertexArrayObject | null): void;
@@ -41,6 +46,10 @@ export interface WebGLExtension {
   drawElementsInstanced(mode: GLenum, count: GLsizei, type: GLenum, offset: GLintptr, instanceCount: GLsizei): void;
   vertexAttribDivisor(index: GLuint, divisor: GLuint): void;
   drawBuffers(buffers: Iterable<GLenum>): void;
+
+  /** Multi View. */
+  getFramebufferAttachmentParameter(target: GLenum, attachment: GLenum, pname: GLenum): any;
+  framebufferTextureMultiviewOVR(target: GLenum, attachment: GLenum, texture: WebGLTexture, level: GLint, baseViewIndex: GLint, numViews: GLsizei): void;
 }
 
 export interface TextureFormatDetail {

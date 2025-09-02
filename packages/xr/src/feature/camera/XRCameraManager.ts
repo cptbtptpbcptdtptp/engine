@@ -1,13 +1,16 @@
-import { Camera, CameraClearFlags, CameraType, Matrix } from "@galacean/engine";
-import { XRManagerExtended } from "../../XRManagerExtended";
+import { Camera, CameraClearFlags, CameraType, Matrix, ShaderMacro } from "@galacean/engine";
 import { XRCamera } from "../../input/XRCamera";
 import { XRTrackedInputDevice } from "../../input/XRTrackedInputDevice";
 import { XRSessionState } from "../../session/XRSessionState";
+import { XRManagerExtended } from "../../XRManagerExtended";
+import { XRStereoRenderMode } from "../../XRStereoRenderMode";
 
 /**
  * The manager of XR camera.
  */
 export class XRCameraManager {
+  private static _singlePassMultiViewMacro: ShaderMacro = ShaderMacro.getByName("SINGLE_PASS_MULTI_VIEW");
+
   /**
    * The fixed foveation of the camera.
    */
@@ -32,7 +35,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  constructor(private _xrManager: XRManagerExtended) {}
+  constructor(private _xrManager: XRManagerExtended) { }
 
   /**
    * Attach the camera to the specified input type(Camera, LeftCamera or RightCamera).
@@ -88,7 +91,14 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onSessionStart(): void {}
+  _getCamera(type: XRTrackedInputDevice.Camera | XRTrackedInputDevice.LeftCamera | XRTrackedInputDevice.RightCamera) {
+    return this._xrManager.inputManager.getTrackedDevice<XRCamera>(type);
+  }
+
+  /**
+   * @internal
+   */
+  _onSessionStart(): void { }
 
   /**
    * @internal
@@ -120,7 +130,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onSessionExit(): void {}
+  _onSessionExit(): void { }
 
   /**
    * @internal
@@ -140,5 +150,21 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onDestroy(): void {}
+  _onDestroy(): void { }
+
+  /**
+   * @internal
+   */
+  _onStereoRenderModeChange(value: XRStereoRenderMode): void {
+    const macro = XRCameraManager._singlePassMultiViewMacro;
+    if (value) {
+      this._getCamera(XRTrackedInputDevice.Camera)?._camera?.shaderData.enableMacro(macro);
+      this._getCamera(XRTrackedInputDevice.LeftCamera)?._camera?.shaderData.enableMacro(macro);
+      this._getCamera(XRTrackedInputDevice.RightCamera)?._camera?.shaderData.enableMacro(macro);
+    } else {
+      this._getCamera(XRTrackedInputDevice.Camera)?._camera?.shaderData.disableMacro(macro);
+      this._getCamera(XRTrackedInputDevice.LeftCamera)?._camera?.shaderData.disableMacro(macro);
+      this._getCamera(XRTrackedInputDevice.RightCamera)?._camera?.shaderData.disableMacro(macro);
+    }
+  }
 }

@@ -1,9 +1,6 @@
 import { Matrix, Vector3 } from "@galacean/engine-math";
 import { ignoreClone } from "./clone/CloneManager";
 
-/**
- * @internal
- */
 export class VirtualCamera {
   isOrthographic: boolean = false;
   nearClipPlane: number = 0.1;

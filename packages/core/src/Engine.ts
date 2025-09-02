@@ -141,7 +141,11 @@ export class Engine extends EventDispatcher {
       const raf = this.xrManager?._getRequestAnimationFrame() || requestAnimationFrame;
       this._requestId = raf(this._animate);
       if (this._vSyncCounter++ % this._vSyncCount === 0) {
-        this.update();
+        try {
+          this.update();
+        } catch (error) {
+          console.log(error.message);
+        }
         this._vSyncCounter = 1;
       }
     } else {

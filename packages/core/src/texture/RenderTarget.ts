@@ -24,6 +24,7 @@ export class RenderTarget extends GraphicsResource {
   private _height: number;
   private _colorTextures: Texture[];
   private _depthTexture: Texture | null = null;
+  private _isMultiView: boolean = false;
 
   /**
    * Whether to automatically generate multi-level textures.
@@ -87,7 +88,8 @@ export class RenderTarget extends GraphicsResource {
     height: number,
     colorTexture: Texture,
     depthFormat?: TextureFormat | null | RenderBufferDepthFormat,
-    antiAliasing?: number
+    antiAliasing?: number,
+    isMultiView?: boolean
   );
 
   /**
@@ -106,7 +108,8 @@ export class RenderTarget extends GraphicsResource {
     height: number,
     colorTexture: Texture | null,
     depthTexture: Texture,
-    antiAliasing?: number
+    antiAliasing?: number,
+    isMultiView?: boolean
   );
 
   /**
@@ -124,7 +127,8 @@ export class RenderTarget extends GraphicsResource {
     height: number,
     colorTextures: Texture[],
     depthFormat?: TextureFormat | null | RenderBufferDepthFormat,
-    antiAliasing?: number
+    antiAliasing?: number,
+    isMultiView?: boolean
   );
 
   /**
@@ -142,7 +146,8 @@ export class RenderTarget extends GraphicsResource {
     height: number,
     colorTextures: Texture[],
     depthTexture: Texture,
-    antiAliasing?: number
+    antiAliasing?: number,
+    isMultiView?: boolean
   );
 
   /**
@@ -154,7 +159,8 @@ export class RenderTarget extends GraphicsResource {
     height: number,
     renderTexture: Texture | Texture[] | null,
     depth: Texture | null | TextureFormat | RenderBufferDepthFormat = TextureFormat.Depth,
-    antiAliasing: number = 1
+    antiAliasing: number = 1,
+    isMultiView: boolean = false
   ) {
     console.log('RenderTarget0');
     super(engine);
@@ -163,6 +169,7 @@ export class RenderTarget extends GraphicsResource {
     this._height = height;
     this._antiAliasing = antiAliasing;
     this._depth = <Texture | null | TextureFormat>depth;
+    this._isMultiView = isMultiView;
     if (renderTexture) {
       console.log('RenderTarget2');
       const colorTextures = renderTexture instanceof Array ? renderTexture.slice() : [renderTexture];

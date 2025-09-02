@@ -404,11 +404,13 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
 
       bufferWidth = renderTarget.width >> mipLevel;
       bufferHeight = renderTarget.height >> mipLevel;
+      console.log('bindOtherFramebuffer');
     } else {
       const gl = this._gl;
       gl.bindFramebuffer(gl.FRAMEBUFFER, this._mainFrameBuffer);
       bufferWidth = this.getMainFrameBufferWidth();
       bufferHeight = this.getMainFrameBufferHeight();
+      console.log('bindMainFramebuffer');
     }
 
     const width = bufferWidth * viewport.z;
@@ -417,6 +419,7 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
     const y = isFlipProjection ? viewport.y * bufferHeight : bufferHeight - viewport.y * bufferHeight - height;
     this.viewport(x, y, width, height);
     this.scissor(x, y, width, height);
+    console.log('viewport', x, y, width, height);
   }
 
   blitInternalRTByBlitFrameBuffer(
@@ -503,7 +506,7 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
     const yStart = flipY ? srcHeight - viewport.y * srcHeight - copyHeight : viewport.y * srcHeight;
 
     // @ts-ignore
-    const frameBuffer = srcRT?._platformRenderTarget._frameBuffer ?? null;
+    const frameBuffer = srcRT?._platformRenderTarget._frameBuffer ?? this._mainFrameBuffer;
 
     // @ts-ignore
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
