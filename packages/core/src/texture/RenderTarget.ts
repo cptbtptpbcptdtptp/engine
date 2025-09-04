@@ -162,16 +162,16 @@ export class RenderTarget extends GraphicsResource {
     antiAliasing: number = 1,
     isMultiView: boolean = false
   ) {
-    console.log('RenderTarget0');
+    console.log("RenderTarget0");
     super(engine);
-    console.log('RenderTarget1');
+    console.log("RenderTarget1");
     this._width = width;
     this._height = height;
     this._antiAliasing = antiAliasing;
     this._depth = <Texture | null | TextureFormat>depth;
     this._isMultiView = isMultiView;
     if (renderTexture) {
-      console.log('RenderTarget2');
+      console.log("RenderTarget2");
       const colorTextures = renderTexture instanceof Array ? renderTexture.slice() : [renderTexture];
       for (let i = 0, n = colorTextures.length; i < n; i++) {
         const colorTexture = colorTextures[i];
@@ -182,13 +182,13 @@ export class RenderTarget extends GraphicsResource {
       }
       this._colorTextures = colorTextures;
     } else {
-      console.log('RenderTarget3');
+      console.log("RenderTarget3");
       this._colorTextures = [];
     }
 
-    console.log('RenderTarget4');
+    console.log("RenderTarget4");
     if (depth instanceof Texture) {
-      console.log('RenderTarget5');
+      console.log("RenderTarget5");
       if (!depth._isDepthTexture) {
         throw "Depth texture must use depth format.";
       }
@@ -196,12 +196,12 @@ export class RenderTarget extends GraphicsResource {
       this._depthTexture._addReferCount(1);
       this._depthFormat = depth.format;
     } else if (typeof depth === "number") {
-      console.log('RenderTarget6');
+      console.log("RenderTarget6");
       this._depthFormat = <TextureFormat>depth;
     }
-    console.log('RenderTarget7');
+    console.log("RenderTarget7");
     this._platformRenderTarget = engine._hardwareRenderer.createPlatformRenderTarget(this);
-    console.log('RenderTarget8');
+    console.log("RenderTarget8");
   }
 
   /**

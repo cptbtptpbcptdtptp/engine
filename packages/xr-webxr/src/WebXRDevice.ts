@@ -80,7 +80,7 @@ export class WebXRDevice implements IXRDevice {
               });
             }
             // @ts-ignore
-            console.log('layer.multiviewRequired', layer.multiviewRequired);
+            console.log("layer.multiviewRequired", layer.multiviewRequired);
             session.requestReferenceSpace("local").then((referenceSpace: XRReferenceSpace) => {
               resolve(new WebXRSession(session, layer, referenceSpace));
             }, reject);

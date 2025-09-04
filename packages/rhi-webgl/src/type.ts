@@ -49,7 +49,14 @@ export interface WebGLExtension {
 
   /** Multi View. */
   getFramebufferAttachmentParameter(target: GLenum, attachment: GLenum, pname: GLenum): any;
-  framebufferTextureMultiviewOVR(target: GLenum, attachment: GLenum, texture: WebGLTexture, level: GLint, baseViewIndex: GLint, numViews: GLsizei): void;
+  framebufferTextureMultiviewOVR(
+    target: GLenum,
+    attachment: GLenum,
+    texture: WebGLTexture,
+    level: GLint,
+    baseViewIndex: GLint,
+    numViews: GLsizei
+  ): void;
 }
 
 export interface TextureFormatDetail {

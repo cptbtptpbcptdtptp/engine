@@ -242,9 +242,7 @@ export class CameraExtension {
   }
 }
 
-
 declare module "@galacean/engine" {
-
   interface Camera {
     /** Whether to enable multi-view rendering. */
     get enableMultiView(): boolean;
@@ -359,4 +357,3 @@ function ApplyMixins(derivedCtor: any, baseCtors: any[]): void {
 
 ApplyMixins(XRManager, [XRManagerExtended]);
 ApplyMixins(Camera, [CameraExtension]);
-

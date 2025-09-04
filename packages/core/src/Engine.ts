@@ -240,7 +240,7 @@ export class Engine extends EventDispatcher {
 
   protected constructor(canvas: Canvas, hardwareRenderer: IHardwareRenderer, configuration: EngineConfiguration) {
     super();
-    console.log('Engine.constructor0');
+    console.log("Engine.constructor0");
     this._hardwareRenderer = hardwareRenderer;
     this._hardwareRenderer.init(canvas, this._onDeviceLost.bind(this), this._onDeviceRestored.bind(this));
 
@@ -265,7 +265,7 @@ export class Engine extends EventDispatcher {
       depthTexture2D.isGCIgnored = true;
       this._depthTexture2D = depthTexture2D;
     }
-    console.log('Engine.constructor1');
+    console.log("Engine.constructor1");
 
     if (!hardwareRenderer.canIUse(GLCapabilityType.sRGB)) {
       this._macroCollection.enable(Engine._noSRGBSupportMacro);
@@ -276,7 +276,7 @@ export class Engine extends EventDispatcher {
     meshMagentaMaterial.shaderData.setColor("material_BaseColor", new Color(1.0, 0.0, 1.01, 1.0));
     this._meshMagentaMaterial = meshMagentaMaterial;
 
-    console.log('Engine.constructor2');
+    console.log("Engine.constructor2");
     try {
       const particleMagentaMaterial = new Material(this, Shader.find("particle-shader"));
       particleMagentaMaterial.isGCIgnored = true;
@@ -289,7 +289,7 @@ export class Engine extends EventDispatcher {
       const uberPass = new PostProcessUberPass(this);
       this.addPostProcessPass(uberPass);
     } catch (error) {
-      console.log('Engine.constructor3', JSON.stringify(error.message));
+      console.log("Engine.constructor3", JSON.stringify(error.message));
     }
   }
 

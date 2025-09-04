@@ -19,5 +19,5 @@ export enum XRTrackedInputDevice {
   /** Right hand */
   RightHand,
   /** Undefined */
-  Undefined,
+  Undefined
 }

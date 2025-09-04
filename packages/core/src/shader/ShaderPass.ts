@@ -229,7 +229,10 @@ export class ShaderPass extends ShaderPart {
     if (engine._hardwareRenderer.canIUse(GLCapabilityType.standardDerivatives)) {
       precisionStr += "#define HAS_DERIVATIVES\n";
     }
-    if (engine._hardwareRenderer.canIUse(GLCapabilityType.multiview) && macroCollection.isEnable(Camera._multiviewMacro)) {
+    if (
+      engine._hardwareRenderer.canIUse(GLCapabilityType.multiview) &&
+      macroCollection.isEnable(Camera._multiviewMacro)
+    ) {
       vertexExtension += `
         #extension GL_OVR_multiview2: enable
         layout(num_views = 2) in;

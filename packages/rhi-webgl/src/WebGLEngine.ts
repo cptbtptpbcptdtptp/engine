@@ -13,16 +13,16 @@ export class WebGLEngine extends Engine {
    */
   static create(configuration: WebGLEngineConfiguration): Promise<WebGLEngine> {
     const canvas = configuration.canvas;
-    console.log('WebGLEngine.create0');
+    console.log("WebGLEngine.create0");
     const webCanvas = new WebCanvas(typeof canvas === "string" ? document.getElementById(canvas) : canvas);
-    console.log('WebGLEngine.create1');
+    console.log("WebGLEngine.create1");
     const webGLGraphicDevice = new WebGLGraphicDevice(configuration.graphicDeviceOptions);
-    console.log('WebGLEngine.create2');
+    console.log("WebGLEngine.create2");
     const engine = new WebGLEngine(webCanvas, webGLGraphicDevice, configuration);
-    console.log('WebGLEngine.create3');
+    console.log("WebGLEngine.create3");
     // @ts-ignore
     const promise = engine._initialize(configuration) as Promise<WebGLEngine>;
-    console.log('WebGLEngine.create4');
+    console.log("WebGLEngine.create4");
     return promise.then(() => {
       engine.sceneManager.addScene(new Scene(engine, "DefaultScene"));
       return engine;

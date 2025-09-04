@@ -32,7 +32,7 @@ export class GLRenderTarget implements IPlatformRenderTarget {
    * Create render target in WebGL platform.
    */
   constructor(rhi: WebGLGraphicDevice, target: RenderTarget) {
-    console.log('GLRenderTarget0')
+    console.log("GLRenderTarget0");
     this._gl = rhi.gl as WebGLRenderingContext & WebGL2RenderingContext;
     this._isWebGL2 = rhi.isWebGL2;
     this._target = target;
@@ -44,7 +44,7 @@ export class GLRenderTarget implements IPlatformRenderTarget {
      * MRT + Cube + [,MSAA]
      * MRT + MSAA
      */
-    console.log('GLRenderTarget1', width, height)
+    console.log("GLRenderTarget1", width, height);
     for (let i = 0, n = _colorTextures.length; i < n; i++) {
       const { format, isSRGBColorSpace } = _colorTextures[i];
       if (!GLTexture._supportRenderBufferColorFormat(format, rhi)) {
@@ -54,32 +54,32 @@ export class GLRenderTarget implements IPlatformRenderTarget {
         throw new Error(`If you want to use sRGB color space, only R8G8B8A8 format is supported in RenderTarget`);
       }
     }
-    console.log('GLRenderTarget2')
+    console.log("GLRenderTarget2");
     if (!isDepthTexture && !GLTexture._supportRenderBufferDepthFormat(_depth, rhi)) {
       throw new Error(`TextureFormat is not supported:${TextureFormat[_depth]} in RenderTarget`);
     }
-    console.log('GLRenderTarget3')
+    console.log("GLRenderTarget3");
     if (_colorTextures.length > 1 && !rhi.canIUse(GLCapabilityType.drawBuffers)) {
       throw new Error("MRT is not supported");
     }
 
-    console.log('GLRenderTarget4')
+    console.log("GLRenderTarget4");
     if (_colorTextures.some((v: Texture) => v.width !== width || v.height !== height)) {
       throw new Error("ColorTexture's size must as same as RenderTarget");
     }
 
-    console.log('GLRenderTarget5')
+    console.log("GLRenderTarget5");
     if (isDepthTexture && (_depth.width !== width || _depth.height !== height)) {
       throw new Error("DepthTexture's size must as same as RenderTarget");
     }
 
-    console.log('GLRenderTarget6')
+    console.log("GLRenderTarget6");
     // todo: necessary to support MRT + Cube + [,MSAA] ?
     if (_colorTextures.length > 1 && _colorTextures.some((v: Texture) => v instanceof TextureCube)) {
       throw new Error("MRT+Cube+[,MSAA] is not supported");
     }
 
-    console.log('GLRenderTarget7')
+    console.log("GLRenderTarget7");
     const maxAntiAliasing = rhi.capability.maxAntiAliasing;
     if (target.antiAliasing > maxAntiAliasing) {
       Logger.warn(`MSAA antiAliasing exceeds the limit and is automatically downgraded to:${maxAntiAliasing}`);
@@ -88,24 +88,23 @@ export class GLRenderTarget implements IPlatformRenderTarget {
       target._antiAliasing = maxAntiAliasing;
     }
 
-    console.log('GLRenderTarget8')
+    console.log("GLRenderTarget8");
     this._frameBuffer = this._gl.createFramebuffer();
 
-    console.log('GLRenderTarget9')
+    console.log("GLRenderTarget9");
     // bind main FBO
     this._bindMainFBO();
 
-
-    console.log('GLRenderTarget10')
+    console.log("GLRenderTarget10");
     // bind MSAA FBO
     if (target.antiAliasing > 1) {
-      console.log('GLRenderTarget11')
+      console.log("GLRenderTarget11");
       this._MSAAFrameBuffer = this._gl.createFramebuffer();
-      console.log('GLRenderTarget12')
+      console.log("GLRenderTarget12");
       this._bindMSAAFBO();
-      console.log('GLRenderTarget13')
+      console.log("GLRenderTarget13");
     }
-    console.log('GLRenderTarget14')
+    console.log("GLRenderTarget14");
   }
 
   /**
@@ -314,7 +313,7 @@ export class GLRenderTarget implements IPlatformRenderTarget {
       const { internalFormat, attachment } =
         _depth instanceof Texture
           ? /** @ts-ignore */
-          (_depth._platformTexture as GLTexture)._formatDetail
+            (_depth._platformTexture as GLTexture)._formatDetail
           : GLTexture._getRenderBufferDepthFormatDetail(_depth, gl, isWebGL2);
 
       gl.bindRenderbuffer(gl.RENDERBUFFER, MSAADepthRenderBuffer);
@@ -327,11 +326,11 @@ export class GLRenderTarget implements IPlatformRenderTarget {
   }
 
   private _checkFrameBuffer(): void {
-    console.log('GLRenderTarget._checkFrameBuffer0')
+    console.log("GLRenderTarget._checkFrameBuffer0");
     const gl = this._gl;
     console.log("GLRenderTarget._checkFrameBuffer", gl.FRAMEBUFFER);
     const e = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    console.log('GLRenderTarget._checkFrameBuffer1')
+    console.log("GLRenderTarget._checkFrameBuffer1");
     switch (e) {
       case gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
         throw new Error(
@@ -354,6 +353,6 @@ export class GLRenderTarget implements IPlatformRenderTarget {
           "The values of gl.RENDERBUFFER_SAMPLES are different among attached renderbuffers, or are non-zero if the attached images are a mix of renderbuffers and textures."
         );
     }
-    console.log('GLRenderTarget._checkFrameBuffer2')
+    console.log("GLRenderTarget._checkFrameBuffer2");
   }
 }

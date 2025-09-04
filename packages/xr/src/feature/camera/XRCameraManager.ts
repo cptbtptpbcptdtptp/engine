@@ -35,7 +35,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  constructor(private _xrManager: XRManagerExtended) { }
+  constructor(private _xrManager: XRManagerExtended) {}
 
   /**
    * Attach the camera to the specified input type(Camera, LeftCamera or RightCamera).
@@ -98,7 +98,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onSessionStart(): void { }
+  _onSessionStart(): void {}
 
   /**
    * @internal
@@ -130,7 +130,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onSessionExit(): void { }
+  _onSessionExit(): void {}
 
   /**
    * @internal
@@ -150,7 +150,7 @@ export class XRCameraManager {
   /**
    * @internal
    */
-  _onDestroy(): void { }
+  _onDestroy(): void {}
 
   /**
    * @internal

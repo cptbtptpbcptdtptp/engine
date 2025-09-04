@@ -1,4 +1,4 @@
 export enum XRStereoRenderMode {
-    MultiPass,
-    SinglePassMultiView
+  MultiPass,
+  SinglePassMultiView
 }

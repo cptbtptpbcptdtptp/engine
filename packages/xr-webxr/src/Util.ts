@@ -23,7 +23,7 @@ export function getInputSource(inputSource: XRInputSource): XRTrackedInputDevice
           case "left":
             return XRTrackedInputDevice.LeftHand;
           case "right":
-            return XRTrackedInputDevice.RightHand
+            return XRTrackedInputDevice.RightHand;
           default:
             return XRTrackedInputDevice.Undefined;
         }
@@ -32,7 +32,7 @@ export function getInputSource(inputSource: XRInputSource): XRTrackedInputDevice
           case "left":
             return XRTrackedInputDevice.LeftController;
           case "right":
-            return XRTrackedInputDevice.RightController
+            return XRTrackedInputDevice.RightController;
           default:
             return XRTrackedInputDevice.Undefined;
         }

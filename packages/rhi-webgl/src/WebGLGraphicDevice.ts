@@ -206,7 +206,10 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
     this._onDeviceRestored = onDeviceRestored;
 
     // If external context is provided, reuse it and skip context creation & event binding on fake canvas
-    const externalGL = this._options.context as (WebGLRenderingContext & WebGLExtension) | WebGL2RenderingContext | undefined;
+    const externalGL = this._options.context as
+      | (WebGLRenderingContext & WebGLExtension)
+      | WebGL2RenderingContext
+      | undefined;
     if (externalGL) {
       this._gl = externalGL;
       this._isWebGL2 = externalGL instanceof WebGL2RenderingContext;
@@ -368,10 +371,10 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
   }
 
   drawPrimitive(primitive: GLPrimitive, subPrimitive: SubMesh, shaderProgram: any) {
-    console.log('WebglGraphicDevice.drawPrimitive0')
+    console.log("WebglGraphicDevice.drawPrimitive0");
     // todo: VAO not support morph animation
     if (primitive) {
-      console.log('WebglGraphicDevice.drawPrimitive1')
+      console.log("WebglGraphicDevice.drawPrimitive1");
       primitive.draw(shaderProgram, subPrimitive);
     } else {
       Logger.error("draw primitive failed.");
@@ -404,13 +407,13 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
 
       bufferWidth = renderTarget.width >> mipLevel;
       bufferHeight = renderTarget.height >> mipLevel;
-      console.log('bindOtherFramebuffer');
+      console.log("bindOtherFramebuffer");
     } else {
       const gl = this._gl;
       gl.bindFramebuffer(gl.FRAMEBUFFER, this._mainFrameBuffer);
       bufferWidth = this.getMainFrameBufferWidth();
       bufferHeight = this.getMainFrameBufferHeight();
-      console.log('bindMainFramebuffer');
+      console.log("bindMainFramebuffer");
     }
 
     const width = bufferWidth * viewport.z;
@@ -419,7 +422,7 @@ export class WebGLGraphicDevice implements IHardwareRenderer {
     const y = isFlipProjection ? viewport.y * bufferHeight : bufferHeight - viewport.y * bufferHeight - height;
     this.viewport(x, y, width, height);
     this.scissor(x, y, width, height);
-    console.log('viewport', x, y, width, height);
+    console.log("viewport", x, y, width, height);
   }
 
   blitInternalRTByBlitFrameBuffer(

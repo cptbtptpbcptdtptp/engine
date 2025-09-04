@@ -684,7 +684,7 @@ export class Camera extends Component {
     if (this._cameraType !== CameraType.Normal && !this._renderTarget && !this._isIndependentCanvasEnabled()) {
       ignoreClearFlags = engine.xrManager._getCameraIgnoreClearFlags(this._cameraType);
     }
-    console.log('camera.rendererStart');
+    console.log("camera.rendererStart");
     try {
       this._renderPipeline.render(context, cubeFace, mipLevel, ignoreClearFlags);
     } catch (error) {
@@ -692,7 +692,7 @@ export class Camera extends Component {
     }
     engine._renderCount++;
     context.camera = null;
-    console.log('camera.rendererEnd');
+    console.log("camera.rendererEnd");
   }
 
   /**

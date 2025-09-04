@@ -1,20 +1,19 @@
 // gl_FrontFacing has random value on Adreno GPUs
 // the Adreno bug is only when gl_FrontFacing is inside a function
 // https://bugs.chromium.org/p/chromium/issues/detail?id=1154842
-vec3 getNormal(bool isFrontFacing){
-    vec3 normal = vec3(0, 0, 1);
+vec3 getNormal(bool isFrontFacing) {
     #ifdef RENDERER_HAS_NORMAL
-        normal = normalize(v_normal);
+        vec3 normal = normalize(v_normal);
     #elif defined(HAS_DERIVATIVES)
         vec3 pos_dx = dFdx(v_pos);
         vec3 pos_dy = dFdy(v_pos);
-        normal = normalize( cross(pos_dx, pos_dy) );
+        vec3 normal = normalize(cross(pos_dx, pos_dy));
         normal *= camera_ProjectionParams.x;
     #else
-        normal = vec3(0, 0, 1);
+        vec3 normal = vec3(0, 0, 1);
     #endif
 
-    normal *= float( isFrontFacing ) * 2.0 - 1.0;
+    normal *= float(isFrontFacing) * 2.0 - 1.0;
     return normal;
 }
 
