@@ -1,4 +1,4 @@
-import { Camera, CameraClearFlags, CameraType, Engine, Entity, XRManager } from "@galacean/engine";
+import { CameraClearFlags, CameraType, Engine, Entity, XRManager } from "@galacean/engine";
 import { IXRDevice } from "@galacean/engine-design";
 import { XRCameraManager } from "./feature/camera/XRCameraManager";
 import { XRFeature } from "./feature/XRFeature";
@@ -228,27 +228,7 @@ type TFeatureConstructor<T extends XRFeature> = new (xrManager: XRManagerExtende
 type TFeatureConstructorArguments<T extends new (xrManager: XRManagerExtended, ...args: any[]) => XRFeature> =
   T extends new (xrManager: XRManagerExtended, ...args: infer P) => XRFeature ? P : never;
 
-export class CameraExtension {
-  private _enableMultiView: boolean = false;
-
-  get enableMultiView(): boolean {
-    return this._enableMultiView;
-  }
-
-  set enableMultiView(value: boolean) {
-    if (this._enableMultiView !== value) {
-      this._enableMultiView = value;
-    }
-  }
-}
-
 declare module "@galacean/engine" {
-  interface Camera {
-    /** Whether to enable multi-view rendering. */
-    get enableMultiView(): boolean;
-    set enableMultiView(value: boolean);
-  }
-
   interface XRManager {
     /** Input manager for XR. */
     inputManager: XRInputManager;
@@ -356,4 +336,3 @@ function ApplyMixins(derivedCtor: any, baseCtors: any[]): void {
 }
 
 ApplyMixins(XRManager, [XRManagerExtended]);
-ApplyMixins(Camera, [CameraExtension]);

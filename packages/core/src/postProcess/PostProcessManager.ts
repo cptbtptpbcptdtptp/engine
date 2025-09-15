@@ -38,7 +38,7 @@ export class PostProcessManager {
    * Create a PostProcessManager.
    * @param scene - Scene to which the current PostProcessManager belongs
    */
-  constructor(public readonly scene: Scene) {}
+  constructor(public readonly scene: Scene) { }
 
   /**
    * @internal
@@ -228,6 +228,7 @@ export class PostProcessManager {
       false,
       false,
       !camera._isTargetFormatHDR(),
+      camera.enableMultiView,
       1,
       TextureWrapMode.Clamp,
       TextureFilterMode.Bilinear
@@ -273,6 +274,7 @@ export class PostProcessManager {
         false,
         false,
         !camera.enableHDR,
+        camera.enableMultiView,
         1,
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear

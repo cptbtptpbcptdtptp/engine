@@ -38,6 +38,7 @@ export class DepthOnlyPass extends PipelinePass {
       true,
       false,
       false,
+      camera.multiView,
       1,
       TextureWrapMode.Clamp,
       TextureFilterMode.Point

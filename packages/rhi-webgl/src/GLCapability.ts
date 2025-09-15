@@ -78,9 +78,9 @@ export class GLCapability {
    */
   get maxViewsOVR(): number {
     if (!this._maxViewsOVR) {
-      const gl = this._rhi.gl;
       if (this.canIUse(GLCapabilityType.multiview)) {
-        this._maxViewsOVR = gl.getParameter(gl.MAX_VIEWS_OVR);
+        const ext = this._rhi.requireExtension(GLCapabilityType.multiview);
+        this._maxViewsOVR = ext ? this._rhi.gl.getParameter(ext.MAX_VIEWS_OVR) : 1;
       } else {
         this._maxViewsOVR = 1;
       }

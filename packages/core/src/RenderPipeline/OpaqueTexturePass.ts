@@ -39,6 +39,7 @@ export class OpaqueTexturePass extends PipelinePass {
       false,
       false,
       !camera.enableHDR,
+      camera.multiView,
       1,
       TextureWrapMode.Clamp,
       isNoDownsampling ? TextureFilterMode.Point : TextureFilterMode.Bilinear

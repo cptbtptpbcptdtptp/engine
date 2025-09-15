@@ -59,6 +59,7 @@ export class FinalPass extends PipelinePass {
         false,
         false,
         false,
+        camera.multiView,
         1,
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear

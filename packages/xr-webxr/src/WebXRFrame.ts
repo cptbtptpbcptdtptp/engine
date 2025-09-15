@@ -22,7 +22,7 @@ export class WebXRFrame implements IXRFrame {
     for (let i = 0, n = inputSources.length; i < n; i++) {
       const inputSource = inputSources[i];
       const type = getInputSource(inputSource);
-      if (type === XRTrackedInputDevice.Undefined) continue;
+      if (type === XRTrackedInputDevice.Unknown) continue;
       const input = <IXRController>inputs[type];
       switch (inputSource.targetRayMode) {
         case "screen":

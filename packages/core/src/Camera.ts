@@ -18,6 +18,7 @@ import { DepthTextureMode } from "./enums/DepthTextureMode";
 import { Downsampling } from "./enums/Downsampling";
 import { MSAASamples } from "./enums/MSAASamples";
 import { ReplacementFailureStrategy } from "./enums/ReplacementFailureStrategy";
+import { ShaderMacro } from "./shader";
 import { Shader } from "./shader/Shader";
 import { ShaderData } from "./shader/ShaderData";
 import { ShaderMacroCollection } from "./shader/ShaderMacroCollection";
@@ -27,7 +28,6 @@ import { ShaderDataGroup } from "./shader/enums/ShaderDataGroup";
 import { TextureFormat } from "./texture";
 import { RenderTarget } from "./texture/RenderTarget";
 import { TextureCubeFace } from "./texture/enums/TextureCubeFace";
-import { ShaderMacro } from "./shader";
 
 class MathTemp {
   static tempVec4 = new Vector4();
@@ -42,7 +42,7 @@ class MathTemp {
 @dependentComponents(Transform, DependentMode.CheckOnly)
 export class Camera extends Component {
   /** @internal */
-  static _multiviewMacro = ShaderMacro.getByName("camera_MultiView");
+  static _multiviewMacro = ShaderMacro.getByName("CAMERA_ENABLE_MULTIVIEW");
   /** @internal */
   static _cameraDepthTextureProperty = ShaderProperty.getByName("camera_DepthTexture");
   /** @internal */
@@ -56,8 +56,6 @@ export class Camera extends Component {
 
   /** Whether to enable frustum culling, it is enabled by default. */
   enableFrustumCulling: boolean = true;
-  /** Whether to enable multi-view rendering. */
-  enableMultiView: boolean = false;
 
   /**
    * Determining what to clear when rendering by a Camera.
@@ -128,6 +126,9 @@ export class Camera extends Component {
   @deepClone
   _virtualCamera: VirtualCamera = new VirtualCamera();
   /** @internal */
+  @deepClone
+  _virtualCameraR: VirtualCamera = new VirtualCamera();
+  /** @internal */
   _replacementShader: Shader = null;
   /** @internal */
   _replacementSubShaderTag: ShaderTagKey = null;
@@ -150,6 +151,7 @@ export class Camera extends Component {
   private _enablePostProcess = false;
   private _msaaSamples: MSAASamples;
 
+  private _multiView: boolean = false;
   private _renderTarget: RenderTarget = null;
   @ignoreClone
   private _updateFlagManager: UpdateFlagManager;
@@ -171,6 +173,23 @@ export class Camera extends Component {
   private _inverseProjectionMatrix: Matrix = new Matrix();
   @deepClone
   private _invViewProjMat: Matrix = new Matrix();
+
+  /**
+   * Whether to enable multi-view rendering.
+   */
+  get multiView(): boolean {
+    return this._multiView;
+  }
+
+  set multiView(value: boolean) {
+    if (this._multiView !== value) {
+      this._multiView = value;
+      if (this._renderTarget) {
+        // @todo 
+        // Need framebufferTextureMultiviewOVR
+      }
+    }
+  }
 
   /**
    * Whether to enable opaque texture.
@@ -635,7 +654,6 @@ export class Camera extends Component {
     return this.viewportPointToRay(viewportPoint, out);
   }
 
-  private _first = true;
   /**
    * Manually call the rendering of the camera.
    * @param cubeFace - Cube rendering surface collection
@@ -800,9 +818,10 @@ export class Camera extends Component {
    * @internal
    */
   _needFinalPass(): boolean {
-    // FXAA or sRGB conversion when camera render to screen
-    // return this.antiAliasing === AntiAliasing.FXAA || !this._renderTarget;
+    // @todo Rokid 临时处理
     return false;
+    // FXAA or sRGB conversion when camera render to screen
+    return this.antiAliasing === AntiAliasing.FXAA || !this._renderTarget;
   }
 
   /**
@@ -914,7 +933,7 @@ export class Camera extends Component {
     return out;
   }
 
-  protected _updateShaderData(): void {
+  protected _updateShaderData(virtualCamera: Camera): void {
     const shaderData = this.shaderData;
 
     const transform = this._entity.transform;

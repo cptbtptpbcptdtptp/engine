@@ -155,6 +155,7 @@ export class BasicRenderPipeline {
         false,
         false,
         !camera.enableHDR,
+        camera.multiView,
         msaaSamples,
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear

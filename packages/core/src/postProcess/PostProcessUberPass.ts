@@ -167,6 +167,7 @@ export class PostProcessUberPass extends PostProcessPass {
         false,
         false,
         !camera.enableHDR,
+        camera.enableMultiView,
         1,
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear
@@ -181,6 +182,7 @@ export class PostProcessUberPass extends PostProcessPass {
         false,
         false,
         !camera.enableHDR,
+        camera.enableMultiView,
         1,
         TextureWrapMode.Clamp,
         TextureFilterMode.Bilinear

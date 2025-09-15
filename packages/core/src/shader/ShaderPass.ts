@@ -233,12 +233,15 @@ export class ShaderPass extends ShaderPart {
       engine._hardwareRenderer.canIUse(GLCapabilityType.multiview) &&
       macroCollection.isEnable(Camera._multiviewMacro)
     ) {
+      console.log('Can use multiview and enable multiviewMacro.');
       vertexExtension += `
         #extension GL_OVR_multiview2: enable
         layout(num_views = 2) in;
       `;
+    } else {
+      console.log("Can't use multiview or disable multiviewMacro.");
     }
-    if (isWebGL2) {
+    if (!isWebGL2) {
       fragmentExtension += ShaderFactory._shaderExtension;
     }
 
