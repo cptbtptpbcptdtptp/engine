@@ -382,7 +382,6 @@ export class Sprite extends ReferResource {
     this._updateFlagManager.dispatch(type);
   }
 
-  @ignoreClone
   private _onRegionChange(): void {
     const { _region: region } = this;
     // @ts-ignore
@@ -398,12 +397,10 @@ export class Sprite extends ReferResource {
     region._onValueChanged = this._onRegionChange;
   }
 
-  @ignoreClone
   private _onPivotChange(): void {
     this._dispatchSpriteChange(SpriteModifyFlags.pivot);
   }
 
-  @ignoreClone
   private _onBorderChange(): void {
     const { _border: border } = this;
     // @ts-ignore

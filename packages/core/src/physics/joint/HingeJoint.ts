@@ -177,7 +177,6 @@ export class HingeJoint extends Joint {
     }
   }
 
-  @ignoreClone
   private _onMotorChanged() {
     const motor = this._jointMotor;
     if (this._nativeJoint) {
@@ -188,7 +187,6 @@ export class HingeJoint extends Joint {
     }
   }
 
-  @ignoreClone
   private _onLimitsChanged() {
     const limits = this._limits;
     if (limits && this._nativeJoint) {
@@ -200,7 +198,6 @@ export class HingeJoint extends Joint {
     }
   }
 
-  @ignoreClone
   private _onAxisChanged(): void {
     //@ts-ignore
     this._axis._onValueChanged = null;

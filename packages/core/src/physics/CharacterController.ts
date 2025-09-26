@@ -166,7 +166,6 @@ export class CharacterController extends Collider {
     (<ICharacterController>this._nativeCollider).getWorldPosition(this.entity.transform.worldPosition);
   }
 
-  @ignoreClone
   private _setUpDirection(): void {
     (<ICharacterController>this._nativeCollider).setUpDirection(this._upDirection);
   }

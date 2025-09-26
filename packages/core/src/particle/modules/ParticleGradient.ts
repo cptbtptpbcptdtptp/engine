@@ -208,12 +208,10 @@ export class ParticleGradient {
     keys.splice(index, 1);
   }
 
-  @ignoreClone
   private _setColorTypeArrayDirty(): void {
     this._colorTypeArrayDirty = true;
   }
 
-  @ignoreClone
   private _setAlphaTypeArrayDirty(): void {
     this._alphaTypeArrayDirty = true;
   }

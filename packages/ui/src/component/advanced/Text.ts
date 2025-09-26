@@ -583,7 +583,6 @@ export class Text extends UIRenderer implements ITextRenderer {
     charRenderInfos.length = 0;
   }
 
-  @ignoreClone
   protected override _onTransformChanged(type: number): void {
     if (type & UITransformModifyFlags.Size || type & UITransformModifyFlags.Pivot) {
       this._dirtyUpdateFlag |= DirtyFlag.LocalPositionBounds;

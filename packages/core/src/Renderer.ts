@@ -511,7 +511,6 @@ export class Renderer extends Component implements IComponentCustomClone {
     }
   }
 
-  @ignoreClone
   protected _onTransformChanged(type: TransformModifyFlags): void {
     this._dirtyUpdateFlag |= RendererUpdateFlags.WorldVolume;
   }

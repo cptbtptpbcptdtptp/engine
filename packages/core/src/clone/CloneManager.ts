@@ -108,7 +108,12 @@ export class CloneManager {
     }
 
     const sourceProperty = source[k];
-    if (sourceProperty instanceof Object) {
+    const typeOfSourceProperty = typeof sourceProperty;
+    if (typeOfSourceProperty === 'function') {
+      if (cloneMode !== undefined) {
+        target[k] = sourceProperty;
+      }
+    } else if (typeOfSourceProperty === 'object' && sourceProperty) {
       if (cloneMode === undefined || cloneMode === CloneMode.Assignment) {
         target[k] = sourceProperty;
         return;

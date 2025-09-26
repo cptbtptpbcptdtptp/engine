@@ -17,7 +17,6 @@ export class ParticleCompositeCurve {
   private _curveMin: ParticleCurve;
   @deepClone
   private _curveMax: ParticleCurve;
-  @ignoreClone
   private _updateDispatch: () => void;
 
   /**

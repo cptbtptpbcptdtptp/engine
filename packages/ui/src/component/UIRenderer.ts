@@ -193,7 +193,6 @@ export class UIRenderer extends Renderer implements IGraphics {
   /**
    * @internal
    */
-  @ignoreClone
   _groupListener(flag: number): void {
     if (flag === EntityModifyFlags.Parent || flag === EntityUIModifyFlags.GroupEnableInScene) {
       Utils.setGroupDirty(this);
@@ -203,7 +202,6 @@ export class UIRenderer extends Renderer implements IGraphics {
   /**
    * @internal
    */
-  @ignoreClone
   _rootCanvasListener(flag: number, entity: Entity): void {
     switch (flag) {
       case EntityModifyFlags.Parent:
@@ -226,7 +224,6 @@ export class UIRenderer extends Renderer implements IGraphics {
     }
   }
 
-  @ignoreClone
   private _onColorChanged(): void {
     this._dirtyUpdateFlag |= UIRendererUpdateFlags.Color;
   }

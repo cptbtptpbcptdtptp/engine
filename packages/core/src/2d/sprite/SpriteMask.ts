@@ -339,7 +339,6 @@ export class SpriteMask extends Renderer implements ISpriteRenderer {
     this._dirtyUpdateFlag &= ~SpriteMaskUpdateFlags.AutomaticSize;
   }
 
-  @ignoreClone
   private _onSpriteChange(type: SpriteModifyFlags): void {
     switch (type) {
       case SpriteModifyFlags.texture:

@@ -12,7 +12,6 @@ export class ParticleCurve {
   @ignoreClone
   private _typeArray: Float32Array;
   private _typeArrayDirty = false;
-  @ignoreClone
   private _updateDispatch: () => void;
 
   /**

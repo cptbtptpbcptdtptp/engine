@@ -950,7 +950,6 @@ export class Camera extends Component {
     return this._inverseProjectionMatrix;
   }
 
-  @ignoreClone
   private _onPixelViewportChanged(): void {
     this._updatePixelViewport();
     this._customAspectRatio ?? this._projectionMatrixChange();

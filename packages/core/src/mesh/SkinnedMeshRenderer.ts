@@ -235,12 +235,10 @@ export class SkinnedMeshRenderer extends MeshRenderer {
     }
   }
 
-  @ignoreClone
   private _onLocalBoundsChanged(): void {
     this._dirtyUpdateFlag |= RendererUpdateFlags.WorldVolume;
   }
 
-  @ignoreClone
   private _onSkinUpdated(type: SkinUpdateFlag, value: Object): void {
     switch (type) {
       case SkinUpdateFlag.BoneCountChanged:

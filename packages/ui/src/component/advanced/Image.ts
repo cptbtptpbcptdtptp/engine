@@ -246,7 +246,6 @@ export class Image extends UIRenderer implements ISpriteRenderer {
     canvas._renderElement.addSubRenderElement(subRenderElement);
   }
 
-  @ignoreClone
   protected override _onTransformChanged(type: number): void {
     if (type & UITransformModifyFlags.Size && this._drawMode === SpriteDrawMode.Tiled) {
       this._dirtyUpdateFlag |= ImageUpdateFlags.All;
@@ -265,7 +264,6 @@ export class Image extends UIRenderer implements ISpriteRenderer {
     super._onDestroy();
   }
 
-  @ignoreClone
   private _onSpriteChange(type: SpriteModifyFlags): void {
     switch (type) {
       case SpriteModifyFlags.texture:

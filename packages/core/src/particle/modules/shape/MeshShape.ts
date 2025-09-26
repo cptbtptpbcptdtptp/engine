@@ -133,7 +133,6 @@ export class MeshShape extends BaseShape {
     return typedBuffer;
   }
 
-  @ignoreClone
   private _onMeshChanged(type: MeshModifyFlags): void {
     if (type & MeshModifyFlags.VertexElements) {
       const mesh = this._mesh;
