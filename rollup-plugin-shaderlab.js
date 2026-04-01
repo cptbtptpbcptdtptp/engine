@@ -1,7 +1,7 @@
 /**
  * Rollup plugin for ShaderLab precompilation.
  *
- * Transforms .gs ShaderLab source files at build time.
+ * Transforms .shader ShaderLab source files at build time.
  *
  * When precompile=false: exports source as string (same as glsl plugin).
  * When precompile=true:
@@ -20,7 +20,7 @@ import { createFilter } from "@rollup/pluginutils";
 export default function shaderlab(userOptions = {}) {
   const options = Object.assign(
     {
-      include: [/\.gs$/],
+      include: [/\.shader$/],
       exclude: [],
       /** When true, emit .gsp JSON to dist/. When false, just export string. */
       precompile: true,
@@ -50,7 +50,7 @@ export default function shaderlab(userOptions = {}) {
       }
       const { ShaderLab } = require("@galacean/engine-shaderlab");
       // Register built-in include fragments (Common.glsl, Light.glsl, etc.)
-      // so that #include directives in .gs files can be resolved.
+      // so that #include directives in .shader files can be resolved.
       try {
         const { registerIncludes } = require("@galacean/engine-shader");
         registerIncludes();
@@ -91,7 +91,7 @@ export default function shaderlab(userOptions = {}) {
         }
 
         const precompiled = shaderLab._precompile(code, options.platformTarget, options.basePath);
-        const gspFileName = path.basename(id).replace(/\.gs$/, ".gsp");
+        const gspFileName = path.basename(id).replace(/\.shader$/, ".gsp");
 
         this.emitFile({
           type: "asset",
